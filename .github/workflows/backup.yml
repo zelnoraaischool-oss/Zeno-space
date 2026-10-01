@@ -1,0 +1,37 @@
+# 17.5 バックアップ：毎日 4:00 JST に pg_dump を取り、暗号化して R2 に30世代保存する。
+# 必要な Secrets：SUPABASE_DB_URL、BACKUP_PASSPHRASE、R2_ACCOUNT_ID、R2_ACCESS_KEY_ID、R2_SECRET_ACCESS_KEY、R2_BACKUP_BUCKET
+# Supabase 接続前は SUPABASE_DB_URL が無いため何もしない。
+name: DB backup
+on:
+  schedule:
+    - cron: '0 19 * * *' # 4:00 JST
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Supabase 未接続ならスキップ
+        if: env.SUPABASE_DB_URL == ''
+        run: echo "SUPABASE_DB_URL が未設定のためスキップします"
+      - name: pg_dump
+        if: env.SUPABASE_DB_URL != ''
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-16
+          /usr/lib/postgresql/16/bin/pg_dump --no-owner --no-privileges --format=custom "$SUPABASE_DB_URL" -f backup.dump
+          gpg --batch --symmetric --cipher-algo AES256 --passphrase "${{ secrets.BACKUP_PASSPHRASE }}" -o "zenospace-$(date -u +%Y%m%d).dump.gpg" backup.dump
+      - name: R2 へアップロードし、30世代を超えた分を削除
+        if: env.SUPABASE_DB_URL != ''
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          BUCKET: ${{ secrets.R2_BACKUP_BUCKET }}
+        run: |
+          aws s3 cp zenospace-*.dump.gpg "s3://$BUCKET/db/" --endpoint-url "$ENDPOINT"
+          aws s3 ls "s3://$BUCKET/db/" --endpoint-url "$ENDPOINT" | awk '{print $4}' | sort | head -n -30 | while read f; do
+            [ -n "$f" ] && aws s3 rm "s3://$BUCKET/db/$f" --endpoint-url "$ENDPOINT"
+          done

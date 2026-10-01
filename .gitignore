@@ -1,0 +1,16 @@
+node_modules
+dist
+dev-dist
+coverage
+.env
+.env.local
+.env.*.local
+.vercel
+supabase/.temp
+supabase/.branches
+*.log
+.DS_Store
+supabase/functions/node_modules
+test-results
+playwright-report
+*.tsbuildinfo

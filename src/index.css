@@ -1,0 +1,424 @@
+@import 'tailwindcss';
+
+/*
+ * 11章 デザイントークン「Calm Cosmos」
+ * ダークを基準にし、ライトは同じトークン名で上書きする。
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root,
+[data-theme='dark'] {
+  --bg-base: #0b0d17;
+  --bg-surface: #141729;
+  --bg-elevated: #1c2038;
+  --border-subtle: rgb(255 255 255 / 0.08);
+  --text-primary: #eef0ff;
+  --text-secondary: #a3a8c3;
+  --brand-primary: #6a4df5;
+  --brand-primary-text: #9d85ff;
+  --brand-aurora: #22d3ee;
+  --bubble-other: #1f2440;
+  --bubble-official: #141729;
+  --like: #ff5c8a;
+  --status-success: #34d399;
+  --status-warning: #fbbf24;
+  --status-danger: #f87171;
+  --shadow-soft: none;
+  --glass: rgb(11 13 23 / 0.72);
+  color-scheme: dark;
+}
+
+[data-theme='light'] {
+  --bg-base: #f7f8fc;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
+  --border-subtle: rgb(15 23 42 / 0.08);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --brand-primary: #6a4df5;
+  --brand-primary-text: #5b3fe0;
+  --brand-aurora: #0e7490;
+  --bubble-other: #eef0f6;
+  --bubble-official: #ffffff;
+  --like: #e11d48;
+  --status-success: #059669;
+  --status-warning: #b45309;
+  --status-danger: #dc2626;
+  --shadow-soft: 0 4px 16px rgb(0 0 0 / 0.08);
+  --glass: rgb(247 248 252 / 0.78);
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-base: var(--bg-base);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-subtle: var(--border-subtle);
+  --color-fg: var(--text-primary);
+  --color-fg2: var(--text-secondary);
+  --color-brand: var(--brand-primary);
+  --color-brand-text: var(--brand-primary-text);
+  --color-aurora: var(--brand-aurora);
+  --color-bubble-other: var(--bubble-other);
+  --color-bubble-official: var(--bubble-official);
+  --color-like: var(--like);
+  --color-success: var(--status-success);
+  --color-warning: var(--status-warning);
+  --color-danger: var(--status-danger);
+  --font-sans: 'Space Grotesk', 'Zen Kaku Gothic New', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  --radius-card: 16px;
+  --radius-btn: 12px;
+  --radius-bubble: 18px;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 11.3 タイポグラフィ（文字サイズ設定：標準・大・特大） */
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 64px;
+  scroll-padding-bottom: 96px;
+}
+html[data-text-size='large'] {
+  font-size: 18px;
+}
+html[data-text-size='xlarge'] {
+  font-size: 20px;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.625;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+input,
+textarea,
+select {
+  font-size: max(16px, 1rem);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-primary-text);
+  outline-offset: 2px;
+}
+
+.text-display {
+  font-size: 2rem;
+  line-height: 2.5rem;
+  font-weight: 700;
+}
+.text-title-l {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+}
+.text-title-m {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+}
+.text-body-l {
+  font-size: 1rem;
+  line-height: 1.625rem;
+}
+.text-body-m {
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+.text-label {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 700;
+}
+.text-caption {
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+}
+
+.bg-signature {
+  background-image: linear-gradient(135deg, #7c5cff, #22d3ee);
+}
+.text-signature {
+  background-image: linear-gradient(135deg, #7c5cff, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 11.4 ガラス表現 */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* 12章 モーション */
+@keyframes zs-like-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes zs-like-shrink {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes zs-particle {
+  from {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--dx), var(--dy)) scale(0.4);
+    opacity: 0;
+  }
+}
+@keyframes zs-rise {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes zs-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes zs-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes zs-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes zs-drop {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes zs-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-40px, -20px, 0);
+  }
+}
+@keyframes zs-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes zs-aurora-ring {
+  from {
+    --zs-angle: 0deg;
+  }
+  to {
+    --zs-angle: 360deg;
+  }
+}
+@keyframes zs-tab-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes zs-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@property --zs-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.anim-like-pop {
+  animation: zs-like-pop 400ms var(--ease-standard);
+}
+.anim-like-shrink {
+  animation: zs-like-shrink 160ms ease-out;
+}
+.anim-rise {
+  animation: zs-rise 240ms var(--ease-standard) both;
+}
+.anim-fade {
+  animation: zs-fade 200ms ease-out both;
+}
+.anim-sheet {
+  animation: zs-sheet-up 320ms var(--ease-standard) both;
+}
+.anim-drop {
+  animation: zs-drop 240ms var(--ease-standard) both;
+}
+.anim-tab {
+  animation: zs-tab-bounce 240ms var(--ease-standard);
+}
+.anim-orbit {
+  animation: zs-orbit 1.2s linear infinite;
+}
+
+.particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background-image: linear-gradient(135deg, #7c5cff, #22d3ee);
+  animation: zs-particle 400ms ease-out forwards;
+  pointer-events: none;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent);
+  animation: zs-shimmer 1.2s infinite;
+}
+
+.aurora-ring {
+  position: relative;
+}
+.aurora-ring::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--zs-angle), transparent 70%, #22d3ee, #7c5cff, transparent);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: zs-aurora-ring 2.4s linear 1 forwards;
+  pointer-events: none;
+}
+
+.stars {
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgb(255 255 255 / 0.7), transparent), radial-gradient(1px 1px at 70% 20%, rgb(255 255 255 / 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 40% 70%, rgb(255 255 255 / 0.6), transparent), radial-gradient(1px 1px at 85% 60%, rgb(255 255 255 / 0.4), transparent),
+    radial-gradient(1px 1px at 10% 85%, rgb(255 255 255 / 0.5), transparent), radial-gradient(1.5px 1.5px at 55% 45%, rgb(157 133 255 / 0.6), transparent),
+    radial-gradient(1px 1px at 90% 90%, rgb(34 211 238 / 0.5), transparent);
+  background-size: 240px 240px;
+  animation: zs-drift 30s linear infinite alternate;
+}
+
+/* 12.3 「アニメーションを減らす」：端末設定とアプリ設定の両方 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .stars {
+    animation: none;
+  }
+}
+html[data-reduce-motion='true'] *,
+html[data-reduce-motion='true'] *::before,
+html[data-reduce-motion='true'] *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+}
+html[data-reduce-motion='true'] .stars,
+html[data-reduce-motion='true'] .particle {
+  animation: none;
+  display: none;
+}
+
+/* 2つつまみのスライダー：つまみだけ操作できるようにする */
+.range-thumb::-webkit-slider-thumb {
+  pointer-events: auto;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 3px solid var(--brand-primary);
+  cursor: grab;
+}
+.range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 3px solid var(--brand-primary);
+  cursor: grab;
+}
