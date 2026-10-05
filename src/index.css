@@ -502,3 +502,74 @@ html[data-reduce-motion='true'] .particle {
   border: 3px solid var(--brand-primary);
   cursor: grab;
 }
+
+/* ランディングの写真背景（光の差すコンクリート壁）。読み込み前は写真の平均色を敷く */
+.hero-photo {
+  background-color: #b4aca2;
+}
+.hero-photo img {
+  object-position: 80% 50%;
+}
+/* 文字が載る側を壁の明るさでやわらかく覆い、下端はページの地色へ溶かす */
+.hero-veil {
+  background:
+    linear-gradient(90deg, rgb(242 240 235 / 0.86) 0%, rgb(242 240 235 / 0.74) 70%, rgb(242 240 235 / 0.3) 100%),
+    linear-gradient(180deg, transparent 88%, var(--bg-base) 100%);
+}
+@media (min-width: 768px) {
+  .hero-photo img {
+    object-position: 60% 50%;
+  }
+  .hero-veil {
+    background:
+      linear-gradient(90deg, rgb(242 240 235 / 0.7) 0%, rgb(242 240 235 / 0.42) 36%, transparent 60%),
+      linear-gradient(180deg, transparent 82%, var(--bg-base) 100%);
+  }
+}
+[data-theme='dark'] .hero-photo img {
+  filter: brightness(0.55) saturate(0.8);
+}
+[data-theme='dark'] .hero-veil {
+  background:
+    linear-gradient(90deg, rgb(12 20 16 / 0.78) 0%, rgb(12 20 16 / 0.45) 50%, rgb(12 20 16 / 0.2) 100%),
+    linear-gradient(180deg, transparent 82%, var(--bg-base) 100%);
+}
+
+/* 写真がゆっくり落ち着く（わずかに寄った状態から戻る） */
+.hero-settle {
+  animation: zs-settle 2.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes zs-settle {
+  from {
+    transform: scale(1.06);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+/* スクロールを促す細い線 */
+@keyframes zs-drip {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-settle {
+    animation: none;
+  }
+}

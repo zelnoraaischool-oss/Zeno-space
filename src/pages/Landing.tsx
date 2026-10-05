@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { api } from '@/lib/api'
 import { useLive } from '@/hooks/useLive'
 import { useMe, useOpenLogin } from '@/app/session'
-import { Ambient, Eyebrow, Logo, OliveTree } from '@/components/ui/illustrations'
+import { Ambient, Eyebrow, Logo } from '@/components/ui/illustrations'
 import { Button } from '@/components/ui/primitives'
 
 const PILLARS = [
@@ -14,7 +14,7 @@ const PILLARS = [
 
 /**
  * U-01 ランディング。
- * 光の差すコンクリートの壁、鉢植えのオリーブ、深緑のロゴと明朝の見出しで、静かな第一印象をつくる。
+ * 光の差すコンクリート壁の写真を全面に敷き、深緑のロゴと明朝の見出しで静かな第一印象をつくる。
  */
 export default function Landing() {
   const me = useMe()
@@ -25,47 +25,65 @@ export default function Landing() {
   const items = data?.items ?? []
   return (
     <div className="relative isolate min-h-dvh overflow-hidden">
-      <Ambient />
-      {/* 鉢植えのオリーブ（右）と、床の反射 */}
-      <OliveTree className="pointer-events-none absolute -right-16 top-24 hidden h-[760px] w-auto opacity-95 md:block lg:right-6" />
-      <div className="pointer-events-none absolute inset-x-0 top-[860px] hidden h-px bg-subtle md:block" aria-hidden />
+      <Ambient leaves={false} />
 
-      <header className="relative mx-auto flex max-w-6xl items-center justify-between px-5 py-6 sm:px-10">
-        <Logo className="sm:invisible" />
-        <Button variant="ghost" onClick={() => navigate('/login')}>
-          ログイン
-        </Button>
-      </header>
-
-      <section className="relative mx-auto max-w-6xl px-5 pb-16 pt-14 sm:px-10 sm:pt-24 lg:pb-28">
-        <div className="max-w-2xl">
-          <div className="mb-10 hidden sm:block">
-            <Logo size="lg" />
-          </div>
-          <div className="h-px w-28 bg-[var(--text-secondary)] opacity-40" aria-hidden />
-          <p className="mt-5 text-label tracking-[0.3em] text-fg2">コンセプト</p>
-          <h1 className="mt-3 font-serif text-[1.75rem] font-semibold leading-[1.5] tracking-[0.06em] sm:text-[2.75rem] lg:text-[3rem]">
-            つくったものが、
-            <br />
-            会話のはじまりになる。
-          </h1>
-          <p className="font-script mt-3 text-[1.875rem] leading-none text-brand-text sm:text-[2.5rem]">where works begin conversations</p>
-          <p className="mt-8 max-w-md text-body-l leading-8 tracking-[0.04em] text-fg2">
-            作品を物件のように並べて見つけ、気になった制作者とそのまま話せる場所。毎朝のAIニュースも届きます。
-          </p>
-          <div className="mt-10 flex max-w-sm flex-col gap-3">
-            <Button size="lg" variant="signature" className="tracking-[0.1em]" onClick={() => navigate('/login')} icon={<ArrowRight className="size-5" strokeWidth={1.5} />}>
-              Googleではじめる
-            </Button>
-            <Button size="lg" variant="secondary" className="tracking-[0.1em]" onClick={() => navigate('/search')}>
-              ログインせずに作品を見る
-            </Button>
-          </div>
+      {/* ファーストビュー：光の差すコンクリート壁の写真を全面に敷く */}
+      <div className="relative flex min-h-[100svh] flex-col">
+        <div className="hero-photo absolute inset-0 -z-10 overflow-hidden" aria-hidden>
+          <img
+            src="/images/hero-wall.webp"
+            srcSet="/images/hero-wall-960.webp 960w, /images/hero-wall.webp 1672w"
+            sizes="100vw"
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            className="hero-settle size-full object-cover"
+          />
+          <div className="hero-veil absolute inset-0" />
         </div>
-      </section>
+
+        <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-6 sm:px-10">
+          <Logo className="sm:invisible" />
+          <Button variant="secondary" className="px-5 tracking-[0.12em] backdrop-blur-md" onClick={() => navigate('/login')}>
+            ログイン
+          </Button>
+        </header>
+
+        <section className="relative mx-auto flex w-full max-w-6xl flex-1 items-center px-5 pb-20 pt-8 sm:px-10 sm:pb-28">
+          <div className="max-w-xl">
+            <div className="mb-10 hidden sm:block">
+              <Logo size="lg" />
+            </div>
+            <div className="h-px w-28 bg-[var(--text-secondary)] opacity-40" aria-hidden />
+            <p className="mt-5 text-label tracking-[0.3em] text-fg2">コンセプト</p>
+            <h1 className="mt-3 font-serif text-[1.75rem] font-semibold leading-[1.5] tracking-[0.06em] sm:text-[2.75rem] lg:text-[3rem]">
+              つくったものが、
+              <br />
+              会話のはじまりになる。
+            </h1>
+            <p className="font-script mt-3 text-[1.875rem] leading-none text-brand-text sm:text-[2.5rem]">where works begin conversations</p>
+            <p className="mt-8 max-w-md text-body-l leading-8 tracking-[0.04em] text-fg2">
+              作品を物件のように並べて見つけ、気になった制作者とそのまま話せる場所。毎朝のAIニュースも届きます。
+            </p>
+            <div className="mt-10 flex max-w-sm flex-col gap-3">
+              <Button size="lg" variant="signature" className="tracking-[0.1em] shadow-[0_10px_30px_-12px_rgb(31_74_58/0.6)]" onClick={() => navigate('/login')} icon={<ArrowRight className="size-5" strokeWidth={1.5} />}>
+                Googleではじめる
+              </Button>
+              <Button size="lg" variant="secondary" className="tracking-[0.1em] backdrop-blur-sm" onClick={() => navigate('/search')}>
+                ログインせずに作品を見る
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <a href="#works" className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-2 text-fg2 sm:flex" aria-label="作品を見る">
+          <span className="eyebrow text-[10px]">Scroll</span>
+          <span className="h-10 w-px animate-[zs-drip_2.4s_ease-in-out_infinite] bg-current opacity-60 motion-reduce:animate-none" />
+        </a>
+      </div>
 
       {items.length > 0 && (
-        <section className="relative border-y border-subtle bg-base/40 py-10 backdrop-blur-[2px]" aria-label="作品のサンプル">
+        <section id="works" className="relative scroll-mt-4 border-y border-subtle bg-base/40 py-10 backdrop-blur-[2px]" aria-label="作品のサンプル">
           <div className="mx-auto mb-6 max-w-6xl px-5 sm:px-10">
             <Eyebrow>Works</Eyebrow>
           </div>
