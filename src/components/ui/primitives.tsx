@@ -9,8 +9,8 @@ type Size = 'sm' | 'md' | 'lg'
 const VARIANT: Record<Variant, string> = {
   primary: 'bg-brand text-white hover:brightness-110',
   signature: 'bg-signature text-white hover:brightness-110',
-  secondary: 'bg-elevated text-fg border border-subtle hover:brightness-110',
-  ghost: 'text-fg hover:bg-elevated',
+  secondary: 'bg-elevated/80 text-fg border border-[var(--border-subtle)] hover:border-[var(--brand-aurora)] hover:text-brand',
+  ghost: 'text-fg hover:bg-surface',
   danger: 'bg-danger text-white hover:brightness-110',
   warning: 'bg-warning text-on-accent hover:brightness-110',
 }
@@ -131,7 +131,7 @@ export function Badge({
     brand: 'bg-brand/20 text-brand-text',
     warning: 'bg-warning/15 text-warning',
     danger: 'bg-danger/15 text-danger',
-    dark: 'bg-black/55 text-white backdrop-blur-sm',
+    dark: 'bg-[rgb(20_36_30/0.62)] text-white backdrop-blur-sm tracking-[0.04em] font-medium',
   }
   return (
     <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold leading-4', tones[tone], className)}>{children}</span>

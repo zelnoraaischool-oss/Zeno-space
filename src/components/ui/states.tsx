@@ -18,8 +18,7 @@ export function EmptyState({
 }) {
   return (
     <div className="relative flex flex-col items-center gap-3 overflow-hidden px-6 py-14 text-center">
-      <div className="stars pointer-events-none absolute inset-0 opacity-50" aria-hidden />
-      <PlanetArt variant={art} className="relative text-fg" />
+      <PlanetArt variant={art} className="relative h-32 text-fg" />
       <p className="relative text-title-m">{title}</p>
       {body && <p className="relative max-w-sm text-body-m text-fg2">{body}</p>}
       {action && <div className="relative mt-2">{action}</div>}

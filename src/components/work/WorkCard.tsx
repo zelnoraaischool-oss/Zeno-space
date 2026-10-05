@@ -241,7 +241,7 @@ export const WorkCard = memo(function WorkCard({ work, owner, size = 'M' }: { wo
       <Link
         to={`/works/${work.id}`}
         onClick={open}
-        className="card block overflow-hidden transition-transform duration-200 ease-out hover:-translate-y-1 focus-visible:-translate-y-1"
+        className="card block overflow-hidden transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_18px_40px_-24px_rgb(28_58_47/0.45)] focus-visible:-translate-y-1"
       >
         <div className="relative">
           <Thumb work={work} hoverCycle />
@@ -261,8 +261,8 @@ export const WorkCard = memo(function WorkCard({ work, owner, size = 'M' }: { wo
             )}
           </div>
         </div>
-        <div className="space-y-1.5 p-3">
-          <h3 className="line-clamp-2 min-h-[2.75rem] text-body-m font-bold">{work.title}</h3>
+        <div className="space-y-2 p-3.5">
+          <h3 className="line-clamp-2 min-h-[2.75rem] font-serif text-body-m font-semibold leading-[1.375rem] tracking-[0.04em]">{work.title}</h3>
           <div className="flex items-center gap-1.5 text-caption text-fg2">
             <Avatar name={owner.displayName} color={owner.avatarColor} url={owner.avatarUrl} size={20} />
             <span className="truncate">{owner.displayName}</span>
@@ -270,14 +270,14 @@ export const WorkCard = memo(function WorkCard({ work, owner, size = 'M' }: { wo
           {techNames.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {techNames.slice(0, 3).map((t) => (
-                <span key={t} className="rounded-full bg-elevated px-2 py-0.5 text-[11px] text-fg2">
+                <span key={t} className="rounded-full border border-subtle px-2 py-0.5 text-[11px] tracking-[0.02em] text-fg2">
                   {t}
                 </span>
               ))}
               {techNames.length > 3 && <span className="px-1 text-[11px] text-fg2">+{techNames.length - 3}</span>}
             </div>
           )}
-          <div className="flex items-center gap-3 pt-0.5 text-caption text-fg2 tabular">
+          <div className="flex items-center gap-3 border-t border-subtle pt-2.5 text-caption text-fg2 tabular">
             <span className="inline-flex items-center gap-1">
               <Heart className="size-3.5" strokeWidth={1.75} aria-hidden />
               <span className="sr-only">いいね</span>

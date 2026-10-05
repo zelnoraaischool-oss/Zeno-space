@@ -5,6 +5,9 @@ import { normalizeEmail, normalizeSearch } from '../normalize'
 import { jstDateKey } from '../format'
 import { colorFor, coverArt, workThumb } from './art'
 
+/** 初期データの形や見た目を変えたら上げる（端末内のデモデータを作り直す） */
+export const SEED_VERSION = 2
+
 const H = 3600_000
 const D = 24 * H
 
@@ -951,7 +954,7 @@ export function seed(): DB {
   ]
 
   return {
-    version: 1,
+    version: SEED_VERSION,
     profiles: users,
     identityKeys,
     bannedIdentities: [],

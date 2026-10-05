@@ -44,7 +44,7 @@ import type {
   Work,
   WorkDailyStat,
 } from '../types'
-import { seed } from './seed'
+import { SEED_VERSION, seed } from './seed'
 
 export interface DB {
   version: number
@@ -101,7 +101,6 @@ export interface DB {
 }
 
 const KEY = 'zenospace:mockdb:v1'
-const SCHEMA_VERSION = 1
 
 let state: DB | null = null
 const listeners = new Set<() => void>()
@@ -113,7 +112,7 @@ function load(): DB {
       const raw = localStorage.getItem(KEY)
       if (raw) {
         const parsed = JSON.parse(raw) as DB
-        if (parsed.version === SCHEMA_VERSION) return parsed
+        if (parsed.version === SEED_VERSION) return parsed
       }
     } catch {
       // 壊れたデータは作り直す

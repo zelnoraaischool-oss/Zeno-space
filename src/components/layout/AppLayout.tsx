@@ -5,7 +5,7 @@ import { api } from '@/lib/api'
 import { useSync } from '@/hooks/useLive'
 import { useOnline } from '@/hooks/misc'
 import { useMe, useOpenLogin } from '@/app/session'
-import { Logo } from '@/components/ui/illustrations'
+import { Ambient, Eyebrow, Logo } from '@/components/ui/illustrations'
 import { Avatar, Button, IconButton, Sheet } from '@/components/ui/primitives'
 import { OfflineBar } from '@/components/ui/states'
 import { WORK_TYPES } from '@/lib/constants'
@@ -110,7 +110,8 @@ export function AppLayout() {
   ]
 
   return (
-    <div className="min-h-dvh lg:flex">
+    <div className="relative isolate min-h-dvh lg:flex">
+      <Ambient leaves={!fullHeight} />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-brand focus:px-3 focus:py-2 focus:text-white"
@@ -118,41 +119,45 @@ export function AppLayout() {
         本文へ移動
       </a>
       {/* PC：左サイドバー（13.1） */}
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-subtle px-3 py-5 lg:flex">
-        <Link to="/home" className="mb-6 px-3">
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-subtle bg-base/40 px-4 py-7 backdrop-blur-sm lg:flex">
+        <Link to="/home" className="px-3">
           <Logo />
         </Link>
-        <nav className="flex flex-1 flex-col gap-1" aria-label="メイン">
+        <div className="mx-3 mb-5 mt-6 h-px bg-subtle" aria-hidden />
+        <Eyebrow className="mb-2 px-3">Menu</Eyebrow>
+        <nav className="flex flex-1 flex-col gap-0.5" aria-label="メイン">
           {nav.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-11 items-center gap-3 rounded-[12px] px-3 text-body-m transition-colors',
-                  isActive ? 'bg-elevated font-bold text-brand-text' : 'text-fg2 hover:bg-surface hover:text-fg',
+                  'relative flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-body-m tracking-[0.04em] transition-colors duration-200',
+                  isActive
+                    ? 'bg-surface font-semibold text-brand before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-brand'
+                    : 'text-fg2 hover:bg-surface/70 hover:text-fg',
                 )
               }
             >
-              <n.icon className="size-5" strokeWidth={1.75} />
+              <n.icon className="size-[18px]" strokeWidth={1.5} />
               <span className="flex-1">{n.label}</span>
               {!!n.badge && <span className="rounded-full bg-danger px-1.5 text-[11px] font-bold text-white tabular">{n.badge > 99 ? '99+' : n.badge}</span>}
             </NavLink>
           ))}
           {adminRole && (
-            <NavLink to="/admin" className="flex min-h-11 items-center gap-3 rounded-[12px] px-3 text-body-m text-fg2 hover:bg-surface hover:text-fg">
-              <Shield className="size-5" strokeWidth={1.75} /> 運営コンソール
+            <NavLink to="/admin" className="flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-body-m tracking-[0.04em] text-fg2 hover:bg-surface/70 hover:text-fg">
+              <Shield className="size-[18px]" strokeWidth={1.5} /> 運営コンソール
             </NavLink>
           )}
-          <Button variant="signature" size="lg" className="mt-4" icon={<Plus className="size-5" />} onClick={onPost}>
+          <Button variant="signature" size="lg" className="mt-6 tracking-[0.08em]" icon={<Plus className="size-5" strokeWidth={1.5} />} onClick={onPost}>
             作品を投稿
           </Button>
         </nav>
         {me ? (
-          <Link to="/me" className="flex items-center gap-3 rounded-[12px] p-2 hover:bg-surface">
+          <Link to="/me" className="flex items-center gap-3 rounded-[10px] border-t border-subtle p-2 pt-4 hover:bg-surface/70">
             <Avatar name={me.displayName} color={me.avatarColor} url={me.avatarUrl} size={36} />
             <span className="min-w-0">
-              <span className="block truncate text-body-m font-bold">{me.displayName}</span>
+              <span className="block truncate font-serif text-body-m font-semibold tracking-[0.06em]">{me.displayName}</span>
               <span className="block truncate text-caption text-fg2">@{me.handle}</span>
             </span>
           </Link>
@@ -192,9 +197,9 @@ export function AppLayout() {
               <button
                 onClick={onPost}
                 aria-label="作品を投稿"
-                className="bg-signature flex size-12 items-center justify-center rounded-full text-white shadow-lg shadow-brand/30 transition-transform duration-100 active:scale-90"
+                className="bg-signature flex size-12 items-center justify-center rounded-full text-white shadow-[0_8px_20px_-8px_rgb(31_74_58/0.6)] ring-4 ring-base transition-transform duration-100 active:scale-90"
               >
-                <Plus className="size-6" strokeWidth={2} />
+                <Plus className="size-6" strokeWidth={1.5} />
               </button>
             </div>
             <Tab to="/talk" icon={MessageCircle} label="トーク" badge={unread} />
@@ -212,13 +217,15 @@ function Tab({ to, icon: Icon, label, badge }: { to: string; icon: typeof Home; 
     <NavLink
       to={to}
       className={({ isActive }) =>
-        cn('relative flex h-full flex-col items-center justify-center gap-0.5 text-[10px] font-bold', isActive ? 'text-brand-text' : 'text-fg2')
+        cn('relative flex h-full flex-col items-center justify-center gap-1 text-[10px] font-medium tracking-[0.06em]', isActive ? 'text-brand' : 'text-fg2')
       }
     >
       {({ isActive }) => (
         <>
+          {/* 選択中は上端に細い線（建築的な、静かな示し方） */}
+          <span className={cn('absolute top-0 h-0.5 rounded-full bg-brand transition-all duration-300', isActive ? 'w-6 opacity-100' : 'w-0 opacity-0')} aria-hidden />
           <span key={String(isActive)} className={cn('relative', isActive && 'anim-tab')}>
-            <Icon className={cn('size-6', isActive && 'fill-current/20')} strokeWidth={isActive ? 2.2 : 1.75} />
+            <Icon className="size-[22px]" strokeWidth={isActive ? 1.9 : 1.5} />
             {!!badge && (
               <span className="absolute -right-2.5 -top-1.5 min-w-[18px] rounded-full bg-danger px-1 text-center text-[10px] leading-[18px] text-white tabular">
                 {badge > 99 ? '99+' : badge}
@@ -253,7 +260,7 @@ export function PageHeader({
   const notif = useSync(() => (me ? api.notifications.unreadCount() : 0))
   return (
     <header className={cn('glass sticky top-0 z-20 border-b border-subtle', hideOnDesktop && 'lg:hidden', className)}>
-      <div className="flex h-14 items-center gap-1 px-2 sm:px-4">
+      <div className="flex h-[60px] items-center gap-1 px-2 sm:px-4 lg:px-8">
         {back && (
           <IconButton label="戻る" onClick={() => (typeof back === 'string' ? navigate(back) : window.history.length > 1 ? navigate(-1) : navigate('/home'))}>
             <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden>
@@ -265,11 +272,11 @@ export function PageHeader({
         {actions ?? (
           <>
             <IconButton label="検索" onClick={() => navigate('/search?focus=1')} className="lg:hidden">
-              <Search className="size-5" strokeWidth={1.75} />
+              <Search className="size-5" strokeWidth={1.5} />
             </IconButton>
             {me && (
               <IconButton label={`通知${notif ? `（未読${notif}件）` : ''}`} badge={!!notif} onClick={() => navigate('/notifications')} className="lg:hidden">
-                <Bell className="size-5" strokeWidth={1.75} />
+                <Bell className="size-5" strokeWidth={1.5} />
               </IconButton>
             )}
           </>
@@ -294,10 +301,11 @@ export function BannerStrip() {
   return (
     <div className="space-y-2">
       {visible.map((b) => (
-        <div key={b.id} className="card flex items-start gap-3 border-aurora/30 p-3">
-          <span className="mt-1 size-2 shrink-0 rounded-full bg-aurora" aria-hidden />
+        <div key={b.id} className="flex items-start gap-4 border-y border-subtle py-3">
+          <span className="eyebrow mt-0.5 shrink-0">Notice</span>
+          <span className="mt-1 h-8 w-px shrink-0 bg-subtle" aria-hidden />
           <div className="min-w-0 flex-1">
-            <p className="text-body-m font-bold">{b.title}</p>
+            <p className="text-body-m font-semibold tracking-[0.04em]">{b.title}</p>
             <p className="text-caption text-fg2">{b.body}</p>
             {b.link && (
               <a href={b.link} className="text-caption text-brand-text underline">

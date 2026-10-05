@@ -9,15 +9,15 @@
 
 :root,
 [data-theme='light'] {
-  --bg-base: #e7e6e2;
-  --bg-surface: #f5f4f0;
-  --bg-elevated: #fbfbf8;
-  --border-subtle: rgb(23 50 42 / 0.12);
-  --text-primary: #17322a;
-  --text-secondary: #56635c;
-  --brand-primary: #1f4d3b;
-  --brand-primary-text: #1f5a44;
-  --brand-aurora: #3d6b52;
+  --bg-base: #e9e8e4;
+  --bg-surface: rgb(248 247 244 / 0.86);
+  --bg-elevated: #fafaf7;
+  --border-subtle: rgb(28 58 47 / 0.1);
+  --text-primary: #1c3a2f;
+  --text-secondary: #5f6b65;
+  --brand-primary: #1f4a3a;
+  --brand-primary-text: #24533f;
+  --brand-aurora: #4a7560;
   --on-accent: #ffffff;
   --bubble-other: #fbfbf8;
   --bubble-official: #f5f4f0;
@@ -25,17 +25,20 @@
   --status-success: #2f7d4f;
   --status-warning: #8f5b00;
   --status-danger: #b42318;
-  --shadow-soft: 0 4px 16px rgb(23 50 42 / 0.08);
-  --glass: rgb(231 230 226 / 0.8);
-  --signature-from: #1f4d3b;
-  --signature-to: #4f8466;
+  --shadow-soft: 0 1px 2px rgb(28 58 47 / 0.04), 0 8px 24px -12px rgb(28 58 47 / 0.18);
+  --glass: rgb(233 232 228 / 0.78);
+  --signature-from: #1f4a3a;
+  --signature-to: #2f6450;
+  --beam: rgb(255 255 255 / 0.55);
+  --shade: rgb(28 58 47 / 0.07);
+  --leaf: #1c3a2f;
   --shimmer: rgb(255 255 255 / 0.45);
   color-scheme: light;
 }
 
 [data-theme='dark'] {
   --bg-base: #121815;
-  --bg-surface: #1a221e;
+  --bg-surface: rgb(27 35 31 / 0.88);
   --bg-elevated: #232d28;
   --border-subtle: rgb(233 238 234 / 0.1);
   --text-primary: #e9eeea;
@@ -53,7 +56,10 @@
   --shadow-soft: none;
   --glass: rgb(18 24 21 / 0.78);
   --signature-from: #2b6650;
-  --signature-to: #457a5e;
+  --signature-to: #3b735b;
+  --beam: rgb(156 201 174 / 0.05);
+  --shade: rgb(0 0 0 / 0.25);
+  --leaf: #000000;
   --shimmer: rgb(255 255 255 / 0.06);
   color-scheme: dark;
 }
@@ -75,9 +81,10 @@
   --color-success: var(--status-success);
   --color-warning: var(--status-warning);
   --color-danger: var(--status-danger);
-  --font-sans: 'Space Grotesk', 'Zen Kaku Gothic New', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
-  --radius-card: 16px;
-  --radius-btn: 12px;
+  --font-sans: 'Jost', 'Zen Kaku Gothic New', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  --font-serif: 'Shippori Mincho', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  --radius-card: 14px;
+  --radius-btn: 10px;
   --radius-bubble: 18px;
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -98,7 +105,9 @@ html[data-text-size='xlarge'] {
 
 body {
   margin: 0;
-  background: var(--bg-base);
+  background-color: var(--bg-base);
+  /* コンクリートの壁のような、ごく薄いざらつき */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .2 0 0 0 0 .16 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   color: var(--text-primary);
   font-family: var(--font-sans);
   line-height: 1.625;
@@ -121,20 +130,46 @@ select {
   outline-offset: 2px;
 }
 
+/* 見出しは明朝。静かで品のある印象にし、字間を少し開ける */
 .text-display {
-  font-size: 2rem;
-  line-height: 2.5rem;
-  font-weight: 700;
+  font-family: var(--font-serif);
+  font-size: 2.125rem;
+  line-height: 2.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 .text-title-l {
+  font-family: var(--font-serif);
   font-size: 1.5rem;
-  line-height: 2rem;
-  font-weight: 700;
+  line-height: 2.125rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
 }
 .text-title-m {
-  font-size: 1.25rem;
+  font-family: var(--font-serif);
+  font-size: 1.1875rem;
   line-height: 1.75rem;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.font-serif {
+  font-family: var(--font-serif);
+}
+/* 署名のような筆記体（飾りにだけ使う） */
+.font-script {
+  font-family: 'Great Vibes', cursive;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+/* 見出しの前の小さな欧文ラベル */
+.eyebrow {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--brand-aurora);
 }
 .text-body-l {
   font-size: 1rem;
@@ -147,7 +182,8 @@ select {
 .text-label {
   font-size: 0.8125rem;
   line-height: 1.125rem;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 .text-caption {
   font-size: 0.75rem;
@@ -376,6 +412,35 @@ select {
   pointer-events: none;
 }
 
+/* 窓から差す光の帯（背景の環境光） */
+.light-beams {
+  background-image:
+    linear-gradient(122deg, transparent 0 22%, var(--beam) 22% 31%, transparent 31% 36%, var(--beam) 36% 52%, transparent 52%),
+    linear-gradient(122deg, var(--shade) 0 12%, transparent 12% 74%, var(--shade) 74%);
+  mask-image: linear-gradient(180deg, #000 0 70%, transparent);
+}
+/* 壁に落ちる葉の影：ぼかして、風でゆっくり揺らす */
+.leaf-shadow {
+  color: var(--leaf);
+  opacity: 0.075;
+  filter: blur(3px);
+  transform-origin: 30% 90%;
+  animation: zs-sway 14s ease-in-out infinite alternate;
+}
+[data-theme='dark'] .leaf-shadow {
+  opacity: 0.35;
+}
+@keyframes zs-sway {
+  from {
+    rotate: -1.5deg;
+    translate: 0 0;
+  }
+  to {
+    rotate: 1.5deg;
+    translate: 6px -4px;
+  }
+}
+
 /* 窓から差す光と影（空状態・ランディングの背景） */
 .stars {
   background-image:
@@ -396,7 +461,8 @@ select {
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
   }
-  .stars {
+  .stars,
+  .leaf-shadow {
     animation: none;
   }
 }
@@ -406,6 +472,9 @@ html[data-reduce-motion='true'] *::after {
   animation-duration: 1ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 1ms !important;
+}
+html[data-reduce-motion='true'] .leaf-shadow {
+  animation: none;
 }
 html[data-reduce-motion='true'] .stars,
 html[data-reduce-motion='true'] .particle {

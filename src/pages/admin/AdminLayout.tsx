@@ -22,7 +22,7 @@ import { api, errorMessage } from '@/lib/api'
 import { useSync } from '@/hooks/useLive'
 import { useMe } from '@/app/session'
 import { can, adminSession, type Permission } from '@/lib/api/mock/core'
-import { Logo } from '@/components/ui/illustrations'
+import { Ambient, Logo } from '@/components/ui/illustrations'
 import { Badge, Button, IconButton, TextField } from '@/components/ui/primitives'
 import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/cn'
@@ -165,8 +165,8 @@ export function AdminLogin() {
       </div>
     )
   return (
-    <div className="relative flex min-h-dvh items-center justify-center px-4">
-      <div className="stars pointer-events-none absolute inset-0 opacity-40" aria-hidden />
+    <div className="relative isolate flex min-h-dvh items-center justify-center px-4">
+      <Ambient />
       <form
         className="card relative w-full max-w-sm space-y-4 p-6"
         onSubmit={async (e) => {
