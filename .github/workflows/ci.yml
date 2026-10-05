@@ -1,0 +1,87 @@
+# 18.6 プルリクエストごとに、型検査、テスト、バンドルサイズ、E2E（モック／Supabase）、マイグレーションと RLS の検証を実行する
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: node scripts/check-bundle.mjs
+      # Supabase に接続したビルドでも初回の JavaScript が 200KB 以下であること
+      - run: npx vite build
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_ci
+      - run: node scripts/check-bundle.mjs
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: test-results/
+
+  supabase:
+    # 本物の Supabase（ローカル）にマイグレーションを流し、画面の通し（メールOTP・RLS・Realtime・Storage）と SQL の検証を行う
+    runs-on: ubuntu-latest
+    env:
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: supabase start -x studio,imgproxy,vector,logflare,edge-runtime,supavisor,postgres-meta
+      - run: npm run test:e2e:supabase
+      # 画面の通しで作ったデータを消してから、SQL で1人1アカウント・RLS・制限の強制を確かめる
+      - run: supabase db reset
+      - run: psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -v ON_ERROR_STOP=1 -q -f supabase/tests/local/verify.sql
+      # Vercel のビルドで使うマイグレーション適用スクリプトが、CLI の適用記録を読めること（何も適用しない）
+      - run: MIGRATE=1 SUPABASE_DB_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres node scripts/migrate.mjs
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-supabase
+          path: test-results/
+
+  edge-functions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno check --config supabase/functions/deno.json supabase/functions/*/index.ts

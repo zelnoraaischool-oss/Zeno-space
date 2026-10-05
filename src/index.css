@@ -1,0 +1,575 @@
+@import 'tailwindcss';
+
+/*
+ * 11章 デザイントークン「Quiet Grove（静かな森）」
+ * コンクリートのような明るいグレーの面に、深緑の文字とブランド色を置く。
+ * ライトを基準にし、ダークは同じトークン名で上書きする（深緑がかった墨色）。
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root,
+[data-theme='light'] {
+  --bg-base: #e9e8e4;
+  --bg-surface: rgb(248 247 244 / 0.86);
+  --bg-elevated: #fafaf7;
+  --border-subtle: rgb(28 58 47 / 0.1);
+  --text-primary: #1c3a2f;
+  --text-secondary: #5f6b65;
+  --brand-primary: #1f4a3a;
+  --brand-primary-text: #24533f;
+  --brand-aurora: #4a7560;
+  --on-accent: #ffffff;
+  --bubble-other: #fbfbf8;
+  --bubble-official: #f5f4f0;
+  --like: #b4233c;
+  --status-success: #2f7d4f;
+  --status-warning: #8f5b00;
+  --status-danger: #b42318;
+  --shadow-soft: 0 1px 2px rgb(28 58 47 / 0.04), 0 8px 24px -12px rgb(28 58 47 / 0.18);
+  --glass: rgb(233 232 228 / 0.78);
+  --signature-from: #1f4a3a;
+  --signature-to: #2f6450;
+  --beam: rgb(255 255 255 / 0.55);
+  --shade: rgb(28 58 47 / 0.07);
+  --leaf: #1c3a2f;
+  --shimmer: rgb(255 255 255 / 0.45);
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --bg-base: #121815;
+  --bg-surface: rgb(27 35 31 / 0.88);
+  --bg-elevated: #232d28;
+  --border-subtle: rgb(233 238 234 / 0.1);
+  --text-primary: #e9eeea;
+  --text-secondary: #a3b1a9;
+  --brand-primary: #2b6650;
+  --brand-primary-text: #8cc2a4;
+  --brand-aurora: #9cc9ae;
+  --on-accent: #10201a;
+  --bubble-other: #24302a;
+  --bubble-official: #1a221e;
+  --like: #f0718a;
+  --status-success: #6fcf97;
+  --status-warning: #e8b54d;
+  --status-danger: #f08a80;
+  --shadow-soft: none;
+  --glass: rgb(18 24 21 / 0.78);
+  --signature-from: #2b6650;
+  --signature-to: #3b735b;
+  --beam: rgb(156 201 174 / 0.05);
+  --shade: rgb(0 0 0 / 0.25);
+  --leaf: #000000;
+  --shimmer: rgb(255 255 255 / 0.06);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-base: var(--bg-base);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-subtle: var(--border-subtle);
+  --color-fg: var(--text-primary);
+  --color-fg2: var(--text-secondary);
+  --color-brand: var(--brand-primary);
+  --color-brand-text: var(--brand-primary-text);
+  --color-aurora: var(--brand-aurora);
+  --color-on-accent: var(--on-accent);
+  --color-bubble-other: var(--bubble-other);
+  --color-bubble-official: var(--bubble-official);
+  --color-like: var(--like);
+  --color-success: var(--status-success);
+  --color-warning: var(--status-warning);
+  --color-danger: var(--status-danger);
+  --font-sans: 'Jost', 'Zen Kaku Gothic New', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+  --font-serif: 'Shippori Mincho', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  --radius-card: 14px;
+  --radius-btn: 10px;
+  --radius-bubble: 18px;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* 11.3 タイポグラフィ（文字サイズ設定：標準・大・特大） */
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 64px;
+  scroll-padding-bottom: 96px;
+}
+html[data-text-size='large'] {
+  font-size: 18px;
+}
+html[data-text-size='xlarge'] {
+  font-size: 20px;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-base);
+  /* コンクリートの壁のような、ごく薄いざらつき */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .2 0 0 0 0 .16 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.625;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+input,
+textarea,
+select {
+  font-size: max(16px, 1rem);
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-primary-text);
+  outline-offset: 2px;
+}
+
+/* 見出しは明朝。静かで品のある印象にし、字間を少し開ける */
+.text-display {
+  font-family: var(--font-serif);
+  font-size: 2.125rem;
+  line-height: 2.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.text-title-l {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  line-height: 2.125rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.text-title-m {
+  font-family: var(--font-serif);
+  font-size: 1.1875rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.font-serif {
+  font-family: var(--font-serif);
+}
+/* 署名のような筆記体（飾りにだけ使う） */
+.font-script {
+  font-family: 'Great Vibes', cursive;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+/* 見出しの前の小さな欧文ラベル */
+.eyebrow {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--brand-aurora);
+}
+.text-body-l {
+  font-size: 1rem;
+  line-height: 1.625rem;
+}
+.text-body-m {
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+}
+.text-label {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.text-caption {
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+}
+
+.bg-signature {
+  background-image: linear-gradient(135deg, var(--signature-from), var(--signature-to));
+}
+.text-signature {
+  background-image: linear-gradient(135deg, var(--signature-from), var(--signature-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* 11.4 ガラス表現 */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* 12章 モーション */
+@keyframes zs-like-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes zs-like-shrink {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes zs-particle {
+  from {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--dx), var(--dy)) scale(0.4);
+    opacity: 0;
+  }
+}
+@keyframes zs-rise {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes zs-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes zs-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes zs-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes zs-drop {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes zs-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-40px, -20px, 0);
+  }
+}
+@keyframes zs-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes zs-aurora-ring {
+  from {
+    --zs-angle: 0deg;
+  }
+  to {
+    --zs-angle: 360deg;
+  }
+}
+@keyframes zs-tab-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes zs-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@property --zs-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.anim-like-pop {
+  animation: zs-like-pop 400ms var(--ease-standard);
+}
+.anim-like-shrink {
+  animation: zs-like-shrink 160ms ease-out;
+}
+.anim-rise {
+  animation: zs-rise 240ms var(--ease-standard) both;
+}
+.anim-fade {
+  animation: zs-fade 200ms ease-out both;
+}
+.anim-sheet {
+  animation: zs-sheet-up 320ms var(--ease-standard) both;
+}
+.anim-drop {
+  animation: zs-drop 240ms var(--ease-standard) both;
+}
+.anim-tab {
+  animation: zs-tab-bounce 240ms var(--ease-standard);
+}
+.anim-orbit {
+  animation: zs-orbit 1.2s linear infinite;
+}
+
+.particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background-image: linear-gradient(135deg, var(--signature-from), var(--signature-to));
+  animation: zs-particle 400ms ease-out forwards;
+  pointer-events: none;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
+  animation: zs-shimmer 1.2s infinite;
+}
+
+.aurora-ring {
+  position: relative;
+}
+.aurora-ring::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--zs-angle), transparent 70%, var(--signature-to), var(--signature-from), transparent);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: zs-aurora-ring 2.4s linear 1 forwards;
+  pointer-events: none;
+}
+
+/* 窓から差す光の帯（背景の環境光） */
+.light-beams {
+  background-image:
+    linear-gradient(122deg, transparent 0 22%, var(--beam) 22% 31%, transparent 31% 36%, var(--beam) 36% 52%, transparent 52%),
+    linear-gradient(122deg, var(--shade) 0 12%, transparent 12% 74%, var(--shade) 74%);
+  mask-image: linear-gradient(180deg, #000 0 70%, transparent);
+}
+/* 壁に落ちる葉の影：ぼかして、風でゆっくり揺らす */
+.leaf-shadow {
+  color: var(--leaf);
+  opacity: 0.075;
+  filter: blur(3px);
+  transform-origin: 30% 90%;
+  animation: zs-sway 14s ease-in-out infinite alternate;
+}
+[data-theme='dark'] .leaf-shadow {
+  opacity: 0.35;
+}
+@keyframes zs-sway {
+  from {
+    rotate: -1.5deg;
+    translate: 0 0;
+  }
+  to {
+    rotate: 1.5deg;
+    translate: 6px -4px;
+  }
+}
+
+/* 窓から差す光と影（空状態・ランディングの背景） */
+.stars {
+  background-image:
+    linear-gradient(118deg, transparent 0 18%, rgb(255 255 255 / 0.35) 18% 34%, transparent 34% 46%, rgb(255 255 255 / 0.25) 46% 60%, transparent 60%),
+    linear-gradient(118deg, rgb(23 50 42 / 0.06) 0 10%, transparent 10% 70%, rgb(23 50 42 / 0.05) 70%);
+}
+[data-theme='dark'] .stars {
+  background-image:
+    linear-gradient(118deg, transparent 0 18%, rgb(156 201 174 / 0.06) 18% 34%, transparent 34% 46%, rgb(156 201 174 / 0.04) 46% 60%, transparent 60%);
+}
+
+/* 12.3 「アニメーションを減らす」：端末設定とアプリ設定の両方 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .stars,
+  .leaf-shadow {
+    animation: none;
+  }
+}
+html[data-reduce-motion='true'] *,
+html[data-reduce-motion='true'] *::before,
+html[data-reduce-motion='true'] *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+}
+html[data-reduce-motion='true'] .leaf-shadow {
+  animation: none;
+}
+html[data-reduce-motion='true'] .stars,
+html[data-reduce-motion='true'] .particle {
+  animation: none;
+  display: none;
+}
+
+/* 2つつまみのスライダー：つまみだけ操作できるようにする */
+.range-thumb::-webkit-slider-thumb {
+  pointer-events: auto;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 3px solid var(--brand-primary);
+  cursor: grab;
+}
+.range-thumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 3px solid var(--brand-primary);
+  cursor: grab;
+}
+
+/* ランディングの写真背景（光の差すコンクリート壁）。読み込み前は写真の平均色を敷く */
+.hero-photo {
+  background-color: #b4aca2;
+}
+.hero-photo img {
+  object-position: 80% 50%;
+}
+/* 文字が載る側を壁の明るさでやわらかく覆い、下端はページの地色へ溶かす */
+.hero-veil {
+  background:
+    linear-gradient(90deg, rgb(242 240 235 / 0.86) 0%, rgb(242 240 235 / 0.74) 70%, rgb(242 240 235 / 0.3) 100%),
+    linear-gradient(180deg, transparent 88%, var(--bg-base) 100%);
+}
+@media (min-width: 768px) {
+  .hero-photo img {
+    object-position: 60% 50%;
+  }
+  .hero-veil {
+    background:
+      linear-gradient(90deg, rgb(242 240 235 / 0.7) 0%, rgb(242 240 235 / 0.42) 36%, transparent 60%),
+      linear-gradient(180deg, transparent 82%, var(--bg-base) 100%);
+  }
+}
+[data-theme='dark'] .hero-photo img {
+  filter: brightness(0.55) saturate(0.8);
+}
+[data-theme='dark'] .hero-veil {
+  background:
+    linear-gradient(90deg, rgb(12 20 16 / 0.78) 0%, rgb(12 20 16 / 0.45) 50%, rgb(12 20 16 / 0.2) 100%),
+    linear-gradient(180deg, transparent 82%, var(--bg-base) 100%);
+}
+
+/* 写真がゆっくり落ち着く（わずかに寄った状態から戻る） */
+.hero-settle {
+  animation: zs-settle 2.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes zs-settle {
+  from {
+    transform: scale(1.06);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+/* スクロールを促す細い線 */
+@keyframes zs-drip {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-settle {
+    animation: none;
+  }
+}
