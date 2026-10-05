@@ -63,7 +63,7 @@ export function ProfileView({ profile, self }: { profile: P; self?: boolean }) {
       <div className="mx-auto max-w-5xl">
         <div
           className="relative h-32 overflow-hidden sm:h-48 lg:mt-4 lg:rounded-[16px]"
-          style={{ background: profile.coverUrl ? undefined : `linear-gradient(135deg, ${profile.avatarColor}, #22D3EE)` }}
+          style={{ background: profile.coverUrl ? undefined : `linear-gradient(135deg, ${profile.avatarColor}, #9CC9AE)` }}
         >
           {profile.coverUrl && <img src={profile.coverUrl} alt="" className="size-full object-cover" />}
         </div>

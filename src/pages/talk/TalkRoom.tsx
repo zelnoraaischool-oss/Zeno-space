@@ -214,7 +214,7 @@ function Room({ detail }: { detail: RoomDetail }) {
             <Menu className="size-5" strokeWidth={1.75} />
           </IconButton>
         </div>
-        {!online && <div className="bg-warning px-3 py-1 text-center text-caption text-black">オフラインです。送信は接続が戻ったら自動で行います</div>}
+        {!online && <div className="bg-warning px-3 py-1 text-center text-caption text-on-accent">オフラインです。送信は接続が戻ったら自動で行います</div>}
         {detail.work && room.kind === 'inquiry' && (
           <div className="border-t border-subtle px-3 py-2">
             <WorkCard work={detail.work} owner={api.users.profileSync(detail.work.ownerId)!} size="S" />

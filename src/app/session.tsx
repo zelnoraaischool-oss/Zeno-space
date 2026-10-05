@@ -112,10 +112,10 @@ export function DisplaySettingsSync() {
   useEffect(() => {
     const root = document.documentElement
     const apply = () => {
-      const pref = settings?.theme ?? 'system'
+      const pref = settings?.theme ?? 'light'
       const dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
       root.dataset.theme = dark ? 'dark' : 'light'
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0B0D17' : '#F7F8FC')
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#121815' : '#E7E6E2')
     }
     apply()
     root.dataset.textSize = settings?.textSize ?? 'normal'

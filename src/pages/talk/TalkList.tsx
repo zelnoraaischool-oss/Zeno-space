@@ -206,7 +206,7 @@ function SwipeRow({ s, active }: { s: RoomSummary; active: boolean }) {
     {
       label: '非表示',
       icon: EyeOff,
-      cls: 'bg-warning text-black',
+      cls: 'bg-warning text-on-accent',
       fn: () =>
         run(
           () => api.chat.updateMembership(s.room.id, { hidden: true }),
@@ -214,7 +214,7 @@ function SwipeRow({ s, active }: { s: RoomSummary; active: boolean }) {
           () => api.chat.updateMembership(s.room.id, { hidden: false }),
         ),
     },
-    { label: '既読にする', icon: CheckCheck, cls: 'bg-aurora text-black', fn: () => run(() => api.chat.markRead(s.room.id)) },
+    { label: '既読にする', icon: CheckCheck, cls: 'bg-aurora text-on-accent', fn: () => run(() => api.chat.markRead(s.room.id)) },
   ].filter((a) => !(s.room.kind === 'official' && a.label === '非表示'))
 
   return (

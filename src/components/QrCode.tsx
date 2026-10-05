@@ -5,7 +5,7 @@ export function QrCode({ value, size = 200, className }: { value: string; size?:
   const [src, setSrc] = useState<string | null>(null)
   useEffect(() => {
     let alive = true
-    QR.toDataURL(value, { width: size * 2, margin: 1, color: { dark: '#0B0D17', light: '#FFFFFF' } })
+    QR.toDataURL(value, { width: size * 2, margin: 1, color: { dark: '#17322A', light: '#FFFFFF' } })
       .then((u) => alive && setSrc(u))
       .catch(() => setSrc(null))
     return () => {

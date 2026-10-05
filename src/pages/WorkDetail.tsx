@@ -339,7 +339,7 @@ function LivePreview({ work }: { work: Work }) {
       </div>
       <div
         className={cn(
-          'overflow-hidden border-[6px] border-[#1c2038] bg-white shadow-2xl transition-[width,height] duration-300',
+          'overflow-hidden border-[6px] border-[#2b3a33] bg-white shadow-2xl transition-[width,height] duration-300',
           device === 'sp' ? 'h-[560px] w-[300px] rounded-[36px]' : 'aspect-[16/10] w-full max-w-[880px] rounded-[14px]',
         )}
       >

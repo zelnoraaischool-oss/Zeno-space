@@ -205,7 +205,7 @@ export const auth = {
       kind: 'official',
       name: 'zenospace 公式',
       iconUrl: null,
-      iconColor: '#6A4DF5',
+      iconColor: '#1F4D3B',
       ownerId: OFFICIAL_USER_ID,
       workId: null,
       lastMessageAt: ts,

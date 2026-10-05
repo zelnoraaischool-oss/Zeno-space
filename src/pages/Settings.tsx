@@ -162,7 +162,7 @@ function ProfileSettings() {
           type="button"
           onClick={() => coverRef.current?.click()}
           className="relative block h-28 w-full overflow-hidden rounded-[16px]"
-          style={{ background: `linear-gradient(135deg, ${me.avatarColor}, #22D3EE)` }}
+          style={{ background: `linear-gradient(135deg, ${me.avatarColor}, #9CC9AE)` }}
           aria-label="カバー画像を変更"
         >
           {me.coverUrl && <img src={me.coverUrl} alt="" className="size-full object-cover" />}

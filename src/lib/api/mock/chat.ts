@@ -602,7 +602,7 @@ export const chat = {
   },
 
   // ---- グループ（6.3） ----
-  async createGroup(name: string, memberIds: string[], iconColor = '#22D3EE'): Promise<string> {
+  async createGroup(name: string, memberIds: string[], iconColor = '#3D6B52'): Promise<string> {
     const me = requireUser()
     requireCap(me.id, 'canCreateGroup', '現在、グループの作成は制限されています')
     const d = db()

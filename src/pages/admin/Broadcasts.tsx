@@ -430,9 +430,9 @@ export function BroadcastCompose() {
               ]}
             />
           </div>
-          <div data-theme={previewTheme} className="mx-auto w-[300px] overflow-hidden rounded-[36px] border-[6px] border-[#1c2038] bg-base text-fg">
+          <div data-theme={previewTheme} className="mx-auto w-[300px] overflow-hidden rounded-[36px] border-[6px] border-[#2b3a33] bg-base text-fg">
             <div className="glass flex items-center gap-2 border-b border-subtle px-3 py-2.5">
-              <Avatar name="z" color="#6A4DF5" size={28} verified />
+              <Avatar name="z" color="#1F4D3B" size={28} verified />
               <span className="text-body-m font-bold">zenospace 公式</span>
             </div>
             <div className="min-h-[420px] space-y-2 p-3">

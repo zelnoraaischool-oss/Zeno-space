@@ -12,7 +12,7 @@ const VARIANT: Record<Variant, string> = {
   secondary: 'bg-elevated text-fg border border-subtle hover:brightness-110',
   ghost: 'text-fg hover:bg-elevated',
   danger: 'bg-danger text-white hover:brightness-110',
-  warning: 'bg-warning text-black hover:brightness-110',
+  warning: 'bg-warning text-on-accent hover:brightness-110',
 }
 const SIZE: Record<Size, string> = {
   sm: 'min-h-9 px-3 text-label',
@@ -160,7 +160,7 @@ export function Avatar({
       ) : (
         <span
           className="flex size-full items-center justify-center rounded-full font-bold text-white"
-          style={{ background: color ?? '#6A4DF5', fontSize: size * 0.42 }}
+          style={{ background: color ?? '#1F4D3B', fontSize: size * 0.42 }}
           aria-hidden
         >
           {name.slice(0, 1)}

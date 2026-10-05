@@ -28,7 +28,7 @@ export function workThumb(title: string, c1: string, c2: string, type: WorkType,
       <circle cx="${w * 0.76}" cy="${h * 0.5}" r="${h * 0.14 + variant * 4}" fill="rgba(255,255,255,.35)"/>`
   } else if (type === 'app') {
     body = `
-      <rect x="${w / 2 - 95}" y="40" width="190" height="${h - 40}" rx="30" fill="#0b0d17" opacity=".85"/>
+      <rect x="${w / 2 - 95}" y="40" width="190" height="${h - 40}" rx="30" fill="#17322a" opacity=".85"/>
       <rect x="${w / 2 - 80}" y="70" width="160" height="80" rx="14" fill="${c2}"/>
       <rect x="${w / 2 - 80}" y="165" width="160" height="14" rx="7" fill="rgba(255,255,255,.6)"/>
       <rect x="${w / 2 - 80}" y="190" width="110" height="14" rx="7" fill="rgba(255,255,255,.4)"/>
@@ -66,11 +66,11 @@ export function coverArt(c1: string, c2: string): string {
 /** AIニュースのカテゴリ別イラスト（記事画像は転載しない：9.3） */
 export function newsArt(category: string): string {
   const palette: Record<string, [string, string, string]> = {
-    model: ['#3b2a9e', '#22d3ee', 'M60 70 L100 40 L140 70 L100 100 Z'],
+    model: ['#1f4d3b', '#9cc9ae', 'M60 70 L100 40 L140 70 L100 100 Z'],
     product: ['#4c1d95', '#f472b6', 'M50 50 H150 V110 H50 Z'],
     research: ['#0f3d5c', '#34d399', 'M100 30 A45 45 0 1 1 99.9 30 Z'],
     policy: ['#3f2d0f', '#fbbf24', 'M100 30 L150 110 H50 Z'],
-    business: ['#1e1b4b', '#9d85ff', 'M50 110 V80 H75 V110 M90 110 V60 H115 V110 M130 110 V40 H155 V110'],
+    business: ['#2b3a33', '#c9d8cf', 'M50 110 V80 H75 V110 M90 110 V60 H115 V110 M130 110 V40 H155 V110'],
   }
   const [bg, fg, path] = palette[category] ?? palette.model
   return svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="140" viewBox="0 0 200 140">
@@ -80,7 +80,7 @@ export function newsArt(category: string): string {
   <circle cx="30" cy="25" r="2" fill="#fff"/><circle cx="170" cy="120" r="2" fill="#fff"/></svg>`)
 }
 
-export const AVATAR_COLORS = ['#6A4DF5', '#22D3EE', '#F472B6', '#34D399', '#FBBF24', '#F87171', '#60A5FA', '#A78BFA']
+export const AVATAR_COLORS = ['#1F4D3B', '#3D6B52', '#5E7F6E', '#7A6A4F', '#8A5A44', '#4A5E6A', '#6B5B73', '#2F5D62']
 
 export function colorFor(seed: string): string {
   let h = 0

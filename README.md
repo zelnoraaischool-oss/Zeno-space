@@ -46,7 +46,7 @@ npm run dev        # http://localhost:5173
 ```
 src/
   app/            セッション、表示設定、PWA の案内、規約の再同意
-  components/     UI 部品（デザイントークン「Calm Cosmos」）、作品カード、グラフ、レイアウト
+  components/     UI 部品（デザイントークン「Quiet Grove」（グレー×深緑））、作品カード、グラフ、レイアウト
   pages/          ユーザー向け画面（U-01〜U-24）
   pages/talk/     トークリスト・トークルーム・グループ・友だち追加・リクエスト
   pages/admin/    運営コンソール（A-01〜A-16）

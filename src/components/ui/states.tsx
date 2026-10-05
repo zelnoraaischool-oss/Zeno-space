@@ -67,7 +67,7 @@ export function FullError({
 
 export function OfflineBar() {
   return (
-    <div className="anim-drop flex items-center justify-center gap-2 bg-warning px-3 py-1 text-caption text-black" role="status">
+    <div className="anim-drop flex items-center justify-center gap-2 bg-warning px-3 py-1 text-caption text-on-accent" role="status">
       <WifiOff className="size-3.5" strokeWidth={2} /> オフラインです。送信は接続が戻ったら自動で行います
     </div>
   )

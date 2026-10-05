@@ -28,7 +28,7 @@ export function defaultSettings(userId: string): UserSettings {
     notify,
     quietHours: { enabled: false, start: '23:00', end: '07:00' },
     hidePushBody: false,
-    theme: 'system',
+    theme: 'light',
     textSize: 'normal',
     reduceMotion: false,
     enterToSend: true,
@@ -98,7 +98,7 @@ export function seed(): DB {
     displayName: 'zenospace 公式',
     isOfficial: true,
     bio: 'zenospace の公式アカウントです。毎朝のAIニュースとお知らせを届けます。',
-    avatarColor: '#6A4DF5',
+    avatarColor: '#1F4D3B',
     createdAt: ago(120 * D),
     commissionStatus: 'closed',
   })
@@ -110,7 +110,7 @@ export function seed(): DB {
     skills: ['ディレクション', 'LP制作', 'Figma'],
     prefecture: '福岡県',
     interests: ['LP制作', '生成AI', 'UI/UX'],
-    coverUrl: coverArt('#3b2a9e', '#0e7490'),
+    coverUrl: coverArt('#1f4d3b', '#8fb8a0'),
     links: ['https://example.com/kura'],
     createdAt: ago(100 * D),
   })
@@ -176,8 +176,8 @@ export function seed(): DB {
     profile({
       id: sid('usr00000'),
       coverUrl: coverArt(
-        ['#4c1d95', '#0f3d5c', '#5b2140', '#1e3a2f', '#3f2d0f', '#1e1b4b', '#2a1f4f'][i],
-        ['#22d3ee', '#9d85ff', '#f472b6', '#34d399', '#fbbf24', '#60a5fa', '#a78bfa'][i],
+        ['#1f4d3b', '#2f4a44', '#4a3f35', '#24443a', '#3f3a2f', '#2b3a33', '#35473f'][i],
+        ['#9cc9ae', '#b9c7bf', '#d4c3ad', '#a9c7b2', '#d8cfb8', '#c2cfc7', '#b7cbbd'][i],
       ),
       interests: ['Webデザイン', 'LP制作'],
       createdAt: ago((50 - i * 5) * D),
@@ -662,7 +662,7 @@ export function seed(): DB {
   say(dm1, mio, '良かったです😊 次の募集の時もぜひ', 25 * H - 60_000)
   say(dm1, kura, '来月また相談させてください', 3 * H)
 
-  const grp = addRoom({ kind: 'group', name: 'AIスクール 9期', iconColor: '#22D3EE', ownerId: kura.id }, [
+  const grp = addRoom({ kind: 'group', name: 'AIスクール 9期', iconColor: '#3D6B52', ownerId: kura.id }, [
     { id: kura.id, role: 'owner' },
     { id: mio.id, role: 'admin' },
     { id: taku.id },
