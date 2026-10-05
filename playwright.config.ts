@@ -27,6 +27,6 @@ export default defineConfig({
     command: 'npx vite --port 5174 --strictPort',
     url: 'http://localhost:5174',
     reuseExistingServer: !process.env.CI,
-    env: { VITE_MOCK_BOTS: 'false', VITE_MOCK_LATENCY: '0' },
+    env: { VITE_DATA_SOURCE: 'mock', VITE_MOCK_BOTS: 'false', VITE_MOCK_LATENCY: '0' },
   },
 })

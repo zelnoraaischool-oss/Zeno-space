@@ -109,6 +109,21 @@ export const auth = {
     return sessionUserId()
   },
 
+  /** 使えるログイン方法（モックは Google / GitHub の画面を模したデモを出す） */
+  providers(): ('google' | 'github')[] {
+    return ['google', 'github']
+  },
+
+  /** メールのリンクや外部ログインから戻ってきたときの続き（モックでは使わない） */
+  async resumeSignIn(): Promise<SignInResult | null> {
+    return null
+  },
+
+  /** 登録の途中（規約同意の前）なら、その情報を返す（モックでは登録画面の中で完結する） */
+  pendingSignup(): PendingIdentity | null {
+    return null
+  },
+
   /** Google / GitHub（モックでは選んだメールアドレスで認証したことにする） */
   async signInWithProvider(provider: 'google' | 'github', email: string, displayName?: string): Promise<SignInResult> {
     const r = resolve(provider, email, displayName)
@@ -116,7 +131,8 @@ export const auth = {
   },
 
   /** ZS-AUTH-02 メールOTP（本番は Resend の SMTP 経由で送信） */
-  async sendEmailOtp(email: string): Promise<{ hint: string }> {
+  async sendEmailOtp(email: string, _inviteCode?: string): Promise<{ hint: string }> {
+    void _inviteCode
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new ApiError('invalid', 'メールアドレスの形式が正しくありません')
     return delay({ hint: `デモ用コード：${OTP_CODE}` })
   },
@@ -317,6 +333,16 @@ export const auth = {
   adminRole() {
     const me = currentUser()
     return me ? adminRoleOf(me.id) : null
+  },
+
+  /** 運営ログインの準備（モックはオーナーと認証アプリが登録済みの扱い） */
+  async adminSetup(): Promise<{ bootstrapNeeded: boolean; totp: { qr: string; secret: string } | null }> {
+    return delay({ bootstrapNeeded: false, totp: null })
+  },
+
+  /** 初期設定：最初の運営オーナーになる（モックではデモのオーナーがいるため何もしない） */
+  async claimOwner(): Promise<boolean> {
+    return delay(false)
   },
 
   /** TOTP の検証。本番は Supabase Auth の MFA（factor の challenge / verify）を使う */

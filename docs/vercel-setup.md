@@ -9,39 +9,42 @@
 ## 1. インポート
 
 1. Vercel の「Add New… > Project」で GitHub の `zeno-space` を選ぶ。
-2. Framework Preset は **Vite**（`vercel.json` で指定済み）。Build Command `npm run build`、Output Directory `dist`。
+2. Framework Preset は **Vite**（`vercel.json` で指定済み）。Build Command は `vercel.json` の `node scripts/migrate.mjs && npm run build`、Output Directory は `dist`。
 3. Node.js は 22.x。
 
 ## 2. 環境変数
 
 Project Settings > Environment Variables に設定します（`.env.example` 参照）。
+**Supabase の URL と公開鍵があれば Supabase に接続**し、なければモック（デモ）で配信します（`VITE_DATA_SOURCE` で明示もできる）。
 
-| 変数 | Production | Preview | 備考 |
-| --- | --- | --- | --- |
-| `VITE_DATA_SOURCE` | `supabase` | `supabase`（ステージング）または `mock` | 接続前は `mock` のまま配信できる |
-| `VITE_SUPABASE_URL` | 本番プロジェクト | ステージング | |
-| `VITE_SUPABASE_ANON_KEY` | 本番 | ステージング | anon キーのみ。service_role は入れない |
-| `VITE_VAPID_PUBLIC_KEY` | ✓ | ✓ | Web Push の公開鍵 |
-| `VITE_R2_PUBLIC_BASE_URL` | ✓ | ✓ | 画像の公開ドメイン |
-| `VITE_TURNSTILE_SITE_KEY` | ✓ | ✓ | |
-| `VITE_SENTRY_DSN` | 任意 | 任意 | 個人情報は送らない設定にする |
+| 変数                                                         | 必須 | 備考                                                                                                     |
+| ------------------------------------------------------------ | ---- | -------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✓    | Vercel の Supabase 連携が入れる名前のまま読める。`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` でもよい |
+| `POSTGRES_URL_NON_POOLING`（または `SUPABASE_DB_URL`）       | ✓    | 本番ビルドでマイグレーションを適用する接続先。ブラウザには渡らない                                       |
+| `MIGRATE`                                                    |      | `1` でプレビューでも適用、`0` で適用しない（既定は本番ビルドだけ適用）                                   |
+| `VITE_AUTH_PROVIDERS`                                        |      | `google` / `google,github`。Supabase で外部ログインを有効にしたら設定する                                |
+| `VITE_VAPID_PUBLIC_KEY`                                      |      | Web Push の公開鍵（Edge Function を配置したとき）                                                        |
+| `VITE_TURNSTILE_SITE_KEY` / `VITE_SENTRY_DSN`                |      | 任意                                                                                                     |
 
-`middleware.ts`（クローラー向け OGP）も `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` / `VITE_R2_PUBLIC_BASE_URL` を読みます。未設定のあいだは何もしません。
+service_role / secret の鍵は入れません（ブラウザに渡すのは公開鍵だけ：17.5）。
+`middleware.ts`（クローラー向け OGP）も同じ変数を読みます。
+
+接続の手順全体は [Supabase に接続する](supabase-setup.md) を見てください。
 
 ## 3. ドメインと CSP
 
 - 独自ドメイン（Q-03）を割り当てたら、Supabase の Site URL、R2 の CORS、Edge Function の `APP_ORIGIN` を同じドメインにそろえる。
-- `vercel.json` の `Content-Security-Policy` の `img-src`（`https://img.zenospace.app` は仮の値）を、R2 の公開ドメインに書き換える。
+- 画像は Supabase Storage（`*.supabase.co`）から配信します（CSP で許可済み）。R2 に移したら、`vercel.json` の `img-src`（`https://img.zenospace.app` は仮の値）を R2 の公開ドメインに書き換える。
 - `connect-src` は `*.supabase.co`（REST・Realtime）、R2 のアップロード先、Sentry を許可済み。
 
 ## 4. 配信の仕組み
 
-| パス | 扱い |
-| --- | --- |
-| `/assets/*` | 1年キャッシュ（ファイル名にハッシュ付き） |
-| `/sw.js`、`/manifest.webmanifest` | キャッシュしない（新しい版を「更新」トーストで知らせる：15.4） |
-| `/works/:id`、`/u/:handle` | クローラーには OGP を差し込んだ HTML を返す（`middleware.ts`）。人には SPA |
-| その他 | `index.html` にリライト（SPA） |
+| パス                              | 扱い                                                                       |
+| --------------------------------- | -------------------------------------------------------------------------- |
+| `/assets/*`                       | 1年キャッシュ（ファイル名にハッシュ付き）                                  |
+| `/sw.js`、`/manifest.webmanifest` | キャッシュしない（新しい版を「更新」トーストで知らせる：15.4）             |
+| `/works/:id`、`/u/:handle`        | クローラーには OGP を差し込んだ HTML を返す（`middleware.ts`）。人には SPA |
+| その他                            | `index.html` にリライト（SPA）                                             |
 
 ## 5. 確認
 

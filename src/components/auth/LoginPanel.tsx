@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, ChevronLeft, ShieldAlert } from 'lucide-react'
-import { api, errorMessage, type PendingIdentity, type SignInResult } from '@/lib/api'
-import { DEMO_ACCOUNTS } from '@/lib/mock/seed'
+import { api, dataSource, errorMessage, type PendingIdentity, type SignInResult } from '@/lib/api'
+import { DEMO_ACCOUNTS } from '@/lib/api/shared'
 import { Button, TextField, TextArea } from '@/components/ui/primitives'
 import { useToast } from '@/components/ui/toast'
 
@@ -37,7 +37,11 @@ function GithubMark() {
 
 /** U-02 ログイン・新規登録。Google を標準、GitHub とメールOTPは任意（ZS-AUTH-01/02） */
 export function LoginPanel({ onDone, compact }: { onDone: (needsOnboarding: boolean) => void; compact?: boolean }) {
-  const [step, setStep] = useState<Step>({ s: 'choose' })
+  // メールを確認したまま登録を終えていない場合は、生年月と規約同意の入力から再開する
+  const [step, setStep] = useState<Step>(() => {
+    const p = api.auth.pendingSignup()
+    return p ? { s: 'signup', pending: p, invite: false } : { s: 'choose' }
+  })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const toast = useToast()
@@ -75,6 +79,21 @@ export function LoginPanel({ onDone, compact }: { onDone: (needsOnboarding: bool
     }
   }
 
+  // メールのリンクや Google から戻ってきたとき：凍結・登録途中などの確認を続ける
+  useEffect(() => {
+    if (dataSource !== 'supabase') return
+    const q = new URLSearchParams(location.search)
+    if (!q.has('code') && !q.has('oauth')) return
+    void api.auth
+      .resumeSignIn()
+      .then((r) => r && handle(r))
+      .catch((e) => setError(errorMessage(e)))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const providers = api.auth.providers()
+  const real = dataSource === 'supabase'
+
   const back = (
     <button className="mb-2 inline-flex min-h-11 items-center gap-1 text-label text-fg2" onClick={() => setStep({ s: 'choose' })}>
       <ChevronLeft className="size-4" /> 戻る
@@ -84,22 +103,45 @@ export function LoginPanel({ onDone, compact }: { onDone: (needsOnboarding: bool
   if (step.s === 'choose')
     return (
       <div className="space-y-3">
+        {providers.includes('google') && (
+          <Button
+            variant="secondary"
+            size="lg"
+            block
+            icon={<GoogleMark />}
+            loading={busy}
+            onClick={() => (real ? run(() => api.auth.signInWithProvider('google', '')) : setStep({ s: 'provider', provider: 'google' }))}
+            className="!bg-white !text-[#1f1f1f]"
+          >
+            Googleではじめる
+          </Button>
+        )}
+        {providers.includes('github') && (
+          <Button
+            variant="secondary"
+            size="lg"
+            block
+            icon={<GithubMark />}
+            loading={busy}
+            onClick={() => (real ? run(() => api.auth.signInWithProvider('github', '')) : setStep({ s: 'provider', provider: 'github' }))}
+          >
+            GitHubではじめる
+          </Button>
+        )}
         <Button
-          variant="secondary"
+          variant={providers.length ? 'ghost' : 'signature'}
           size="lg"
           block
-          icon={<GoogleMark />}
-          onClick={() => setStep({ s: 'provider', provider: 'google' })}
-          className="!bg-white !text-[#1f1f1f]"
+          icon={<Mail className="size-5" strokeWidth={1.75} />}
+          onClick={() => setStep({ s: 'email' })}
         >
-          Googleではじめる
+          {providers.length ? 'メールでログイン' : 'メールではじめる'}
         </Button>
-        <Button variant="secondary" size="lg" block icon={<GithubMark />} onClick={() => setStep({ s: 'provider', provider: 'github' })}>
-          GitHubではじめる
-        </Button>
-        <Button variant="ghost" size="lg" block icon={<Mail className="size-5" strokeWidth={1.75} />} onClick={() => setStep({ s: 'email' })}>
-          メールでログイン
-        </Button>
+        {error && (
+          <p className="text-caption text-danger" role="alert">
+            {error}
+          </p>
+        )}
         {!compact && (
           <p className="pt-2 text-center text-caption text-fg2">
             続けると
@@ -134,11 +176,12 @@ export function LoginPanel({ onDone, compact }: { onDone: (needsOnboarding: bool
         back={back}
         busy={busy}
         error={error}
-        onSend={async (email) => {
+        invite={real && api.app.settings().inviteOnly}
+        onSend={async (email, invite) => {
           setBusy(true)
           setError(null)
           try {
-            const { hint } = await api.auth.sendEmailOtp(email)
+            const { hint } = await api.auth.sendEmailOtp(email, invite)
             setStep({ s: 'otp', email, hint })
           } catch (e) {
             setError(errorMessage(e))
@@ -160,15 +203,17 @@ export function LoginPanel({ onDone, compact }: { onDone: (needsOnboarding: bool
         }}
       >
         {back}
-        <p className="text-body-m text-fg2">{step.email} に届いた6桁のコードを入力してください。</p>
+        <p className="text-body-m text-fg2">
+          {step.email} に届いた確認コードを入力してください。{real && 'メールの「ログインする」ボタンからもログインできます。'}
+        </p>
         {/* 3.3.8 貼り付けと自動入力に対応する */}
         <TextField
           name="code"
           label="確認コード"
           inputMode="numeric"
           autoComplete="one-time-code"
-          pattern="\d{6}"
-          maxLength={6}
+          pattern="\d{6,8}"
+          maxLength={8}
           required
           error={error}
           hint={step.hint}
@@ -272,18 +317,31 @@ function ProviderPicker({
   )
 }
 
-function EmailStep({ back, busy, error, onSend }: { back: React.ReactNode; busy: boolean; error: string | null; onSend: (email: string) => void }) {
+function EmailStep({
+  back,
+  busy,
+  error,
+  invite,
+  onSend,
+}: {
+  back: React.ReactNode
+  busy: boolean
+  error: string | null
+  invite?: boolean
+  onSend: (email: string, invite?: string) => void
+}) {
   const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
   return (
     <form
       className="space-y-4"
       onSubmit={(e) => {
         e.preventDefault()
-        onSend(email)
+        onSend(email, code || undefined)
       }}
     >
       {back}
-      <p className="text-body-m text-fg2">Google や GitHub を使えない方は、メールに届くワンタイムコードでログインできます。</p>
+      <p className="text-body-m text-fg2">メールに届く確認コードでログインします。はじめての方は、そのまま新規登録になります。</p>
       <TextField
         type="email"
         label="メールアドレス"
@@ -294,6 +352,14 @@ function EmailStep({ back, busy, error, onSend }: { back: React.ReactNode; busy:
         error={error}
         autoFocus
       />
+      {invite && (
+        <TextField
+          label="招待コード（はじめての方）"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          hint="現在は招待制です。招待した人から受け取ったコードを入力してください"
+        />
+      )}
       <Button type="submit" block size="lg" loading={busy}>
         コードを送る
       </Button>

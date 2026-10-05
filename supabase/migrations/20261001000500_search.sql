@@ -41,7 +41,15 @@ create trigger work_techs_search after insert or delete on public.work_techs for
 
 create index works_search_pgroonga on public.works using pgroonga (search_text extensions.pgroonga_text_full_text_search_ops_v2)
   with (normalizers = 'NormalizerNFKC150("unify_kana", true, "unify_to_romaji", false)');
-create index profiles_search_pgroonga on public.profiles using pgroonga ((display_name || ' ' || handle || ' ' || array_to_string(skills, ' ')) extensions.pgroonga_text_full_text_search_ops_v2)
+-- 索引式には IMMUTABLE の関数しか使えない（array_to_string は STABLE）ため、包んだ関数で式を作る
+create or replace function public.profile_search_text(p_name text, p_handle text, p_skills text[])
+returns text
+language sql
+immutable
+parallel safe
+set search_path = ''
+as $$ select coalesce(p_name, '') || ' ' || coalesce(p_handle, '') || ' ' || coalesce(pg_catalog.array_to_string(p_skills, ' '), '') $$;
+create index profiles_search_pgroonga on public.profiles using pgroonga ((public.profile_search_text(display_name, handle, skills)) extensions.pgroonga_text_full_text_search_ops_v2)
   with (normalizers = 'NormalizerNFKC150("unify_kana", true)');
 create index tags_search_pgroonga on public.tags using pgroonga (name extensions.pgroonga_text_full_text_search_ops_v2)
   with (normalizers = 'NormalizerNFKC150("unify_kana", true)');
@@ -73,7 +81,7 @@ as $$
     join public.profiles p on p.id = w.owner_id
     cross join q
     where w.status = 'active' and w.visibility = 'public' and w.published_at is not null
-      and (q.text is null or w.search_text &@~ q.text)
+      and (q.text is null or w.search_text operator(extensions.&@~) q.text)
       and (cardinality(q.types) = 0 or w.type = any (q.types))
       and (cardinality(q.cats) = 0 or w.category_id = any (q.cats))
       and (cardinality(q.techs) = 0 or exists (select 1 from public.work_techs t where t.work_id = w.id and t.tech_id = any (q.techs)))

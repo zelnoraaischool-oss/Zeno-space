@@ -17,3 +17,9 @@ Vercel と Supabase に接続する前に、要件定義書の画面・操作・
 
 - デモ・デザインレビュー・受け入れテスト（Playwright）を接続前から回せる。
 - モックと DB の規則が二重になる。差し替え後はモックを削除し、規則は DB 側だけにする。
+
+## その後（2026-10-05）
+
+- Supabase 実装（`src/lib/api/supabase/`）を追加した。モックと同じ `Api` 型を満たすことを型検査で確かめている。
+- どちらを使うかはビルド時に決める（Supabase の URL と公開鍵があれば Supabase）。`vite.config.ts` の別名 `@impl` で片方だけを本番の JavaScript に含める。
+- モックはデモ・デザインレビュー・高速な受け入れテストのために残す。本番の規則の正本は DB（RLS・RPC）で、`e2e-supabase/` と `supabase/tests/local/verify.sql` で本物の Supabase に対して確かめる。

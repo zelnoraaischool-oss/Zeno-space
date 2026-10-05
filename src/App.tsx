@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } from 'react-router-dom'
 import { api, startBackgroundJobs } from '@/lib/api'
 import { useSync } from '@/hooks/useLive'
@@ -11,9 +11,9 @@ import { DisplaySettingsSync, SessionProvider, useMe } from '@/app/session'
 import { PwaPrompts } from '@/app/PwaPrompts'
 import { ReconsentGate } from '@/app/ReconsentGate'
 import Landing from '@/pages/Landing'
-import Home from '@/pages/Home'
 
-// 初回に読み込む JavaScript を 200KB 以下に保つため、ホーム以外は遅延読み込み（18.1）
+// 初回に読み込む JavaScript を 200KB 以下に保つため、トップ以外は遅延読み込み（18.1。2回目以降は Service Worker のキャッシュから読む）
+const Home = lazy(() => import('@/pages/Home'))
 const Login = lazy(() => import('@/pages/Login'))
 const Onboarding = lazy(() => import('@/pages/Onboarding'))
 const Search = lazy(() => import('@/pages/Search'))
@@ -180,6 +180,17 @@ function ShareTarget() {
 }
 
 export default function App() {
+  // 保存されたログイン状態と設定を読み終えてから画面を出す（ログイン済みなのにトップへ戻されるのを防ぐ）
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    void api.ready().finally(() => setReady(true))
+  }, [])
+  if (!ready)
+    return (
+      <div className="flex min-h-dvh items-center justify-center" aria-busy="true">
+        <Spinner />
+      </div>
+    )
   return (
     <ToastProvider>
       <RouterProvider router={router} />

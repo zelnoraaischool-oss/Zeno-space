@@ -18,10 +18,10 @@ import {
   Menu,
   X,
 } from 'lucide-react'
-import { api, errorMessage } from '@/lib/api'
-import { useSync } from '@/hooks/useLive'
+import { api, dataSource, errorMessage } from '@/lib/api'
+import { useLive, useSync } from '@/hooks/useLive'
 import { useMe } from '@/app/session'
-import { can, adminSession, type Permission } from '@/lib/api/mock/core'
+import { can, adminSession, type Permission } from '@/lib/api/shared'
 import { Ambient, Logo } from '@/components/ui/illustrations'
 import { Badge, Button, IconButton, TextField } from '@/components/ui/primitives'
 import { useToast } from '@/components/ui/toast'
@@ -143,7 +143,7 @@ function Footer({ role, onLogout }: { role: AdminRole; onLogout: () => void }) {
   )
 }
 
-/** A-01 運営ログイン：Google ログイン＋二要素認証（TOTP） */
+/** A-01 運営ログイン：ログイン＋二要素認証（TOTP）。初回は最初のオーナーを決め、認証アプリを登録する */
 export function AdminLogin() {
   const me = useMe()
   const role = useAdminRole()
@@ -151,21 +151,59 @@ export function AdminLogin() {
   const toast = useToast()
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
+  const setup = useLive(() => (me ? api.auth.adminSetup() : Promise.resolve(null)), [me?.id, role])
   const next = new URLSearchParams(location.search).get('next') ?? '/admin'
   if (!me) return <Navigate to="/login" replace />
   if (!role)
     return (
-      <div className="flex min-h-dvh items-center justify-center p-6 text-center">
-        <div className="space-y-3">
-          <p className="text-title-m">運営メンバーではありません</p>
-          <Link to="/home" className="text-brand-text underline">
-            アプリに戻る
-          </Link>
-        </div>
+      <div className="relative isolate flex min-h-dvh items-center justify-center p-6 text-center">
+        <Ambient />
+        {setup.data?.bootstrapNeeded ? (
+          <div className="card relative w-full max-w-sm space-y-4 p-6 text-left">
+            <div className="text-center">
+              <Logo className="justify-center" />
+              <p className="mt-2 text-body-m text-fg2">運営コンソールの初期設定</p>
+            </div>
+            <p className="text-body-m">
+              運営オーナーがまだいません。いまログインしている{' '}
+              <strong>
+                {me.displayName}（@{me.handle}）
+              </strong>{' '}
+              を最初のオーナーにしますか？
+            </p>
+            <p className="text-caption text-fg2">オーナーは1人目だけこの画面で決められます。2人目以降は運営コンソールの「運営メンバー」から追加します。</p>
+            <Button
+              block
+              size="lg"
+              loading={busy}
+              onClick={async () => {
+                setBusy(true)
+                try {
+                  await api.auth.claimOwner()
+                  setup.reload()
+                } catch (err) {
+                  toast({ text: errorMessage(err), tone: 'error' })
+                } finally {
+                  setBusy(false)
+                }
+              }}
+            >
+              オーナーになる
+            </Button>
+          </div>
+        ) : (
+          <div className="relative space-y-3">
+            <p className="text-title-m">{setup.loading ? '確認しています…' : '運営メンバーではありません'}</p>
+            <Link to="/home" className="text-brand-text underline">
+              アプリに戻る
+            </Link>
+          </div>
+        )}
       </div>
     )
+  const totp = setup.data?.totp
   return (
-    <div className="relative isolate flex min-h-dvh items-center justify-center px-4">
+    <div className="relative isolate flex min-h-dvh items-center justify-center px-4 py-10">
       <Ambient />
       <form
         className="card relative w-full max-w-sm space-y-4 p-6"
@@ -186,9 +224,19 @@ export function AdminLogin() {
           <Logo className="justify-center" />
           <p className="mt-2 text-body-m text-fg2">運営コンソール</p>
         </div>
-        <p className="text-body-m">
-          {me.displayName}（{ROLE_LABEL[role]}）としてログインします。認証アプリに表示されている6桁の確認コードを入力してください。
-        </p>
+        {totp ? (
+          <div className="space-y-3">
+            <p className="text-body-m">
+              はじめに、認証アプリ（Google Authenticator、1Password など）でこの QR コードを読み取ってください。読み取れない場合は下のキーを入力します。
+            </p>
+            <img src={totp.qr} alt="認証アプリに登録する QR コード" className="mx-auto size-44 rounded-[10px] bg-white p-2" />
+            <p className="break-all rounded-[10px] bg-surface p-2 text-center font-mono text-caption">{totp.secret}</p>
+          </div>
+        ) : (
+          <p className="text-body-m">
+            {me.displayName}（{ROLE_LABEL[role]}）としてログインします。認証アプリに表示されている6桁の確認コードを入力してください。
+          </p>
+        )}
         <TextField
           label="確認コード（TOTP）"
           value={code}
@@ -198,9 +246,9 @@ export function AdminLogin() {
           maxLength={6}
           required
           autoFocus
-          hint="モック動作中のコード：123456"
+          hint={dataSource === 'mock' ? 'モック動作中のコード：123456' : undefined}
         />
-        <Button type="submit" block size="lg" loading={busy}>
+        <Button type="submit" block size="lg" loading={busy} disabled={setup.loading}>
           ログイン
         </Button>
       </form>

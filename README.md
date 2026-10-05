@@ -3,43 +3,45 @@
 > つくったものが、会話のはじまりになる。
 
 「LINE 型チャット」と「物件サイト型の作品ショーケース」を1アカウントで使える PWA。
-要件定義書 v0.1（2026-09-30）をもとに、**Vercel と Supabase に接続する直前まで**を実装しています。
+要件定義書 v0.1（2026-09-30）をもとに実装しています。
 
-- フロントエンドは全画面が動きます（ユーザー向け 24 画面＋運営コンソール 16 画面）。データは端末内の**モックDB**で動きます。
-- Supabase 側は**マイグレーション（スキーマ・RLS・RPC・Realtime・pg_cron）と Edge Functions** を用意済みです。接続すれば `supabase db push` で反映できます。
-- Vercel 側は `vercel.json`（SPA 配信・セキュリティヘッダー）とクローラー向け OGP の Middleware を用意済みです。
+- **Supabase に接続して実際に使えます**。Supabase の URL と公開鍵があれば自動で接続し（Vercel の Supabase 連携の変数名のままで可）、本番ビルドのときにマイグレーションも自動で適用します。手順は [Supabase に接続する](docs/supabase-setup.md)。
+- 接続先がないときは、端末内の**モックDB**（デモアカウント入り）で全画面を試せます。
+- 画面：ユーザー向け 24 画面＋運営コンソール 16 画面。認証はメールのワンタイムコード（Google / GitHub は設定すれば追加）、画像は Supabase Storage、トークは Realtime。
 
-## すぐに動かす
+## すぐに動かす（モック）
 
 ```bash
 npm install
 npm run dev        # http://localhost:5173
 ```
 
-ログイン画面の「Google ではじめる」→ デモアカウントを選びます（モック動作中は実際の Google 認証は行いません）。
+接続先（`.env.local` の `VITE_SUPABASE_URL` など）がなければモックで動きます。ログイン画面の「Google ではじめる」→ デモアカウントを選びます（モック動作中は実際の Google 認証は行いません）。
 
-| デモアカウント | 役割 |
-| --- | --- |
-| くら（kura@example.com） | 運営オーナー。運営コンソール `/admin` に入れます（確認コード `123456`） |
-| みお（mio.design@gmail.com） | LP 制作者（依頼受付中） |
-| たく（taku.dev@gmail.com） | エンジニア |
-| はな（hana.illust@gmail.com） | イラストレーター |
+| デモアカウント                | 役割                                                                    |
+| ----------------------------- | ----------------------------------------------------------------------- |
+| くら（kura@example.com）      | 運営オーナー。運営コンソール `/admin` に入れます（確認コード `123456`） |
+| みお（mio.design@gmail.com）  | LP 制作者（依頼受付中）                                                 |
+| たく（taku.dev@gmail.com）    | エンジニア                                                              |
+| はな（hana.illust@gmail.com） | イラストレーター                                                        |
 
 メール OTP のデモコードも `123456` です。データを初期状態に戻すには、設定画面の下部「デモデータを初期化」を押します。
 2つのタブで別のユーザーとしてログインすると、メッセージや利用制限がもう一方のタブに即時に反映されます（Realtime の代わり）。
 
 ## スクリプト
 
-| コマンド | 内容 |
-| --- | --- |
-| `npm run dev` | 開発サーバー |
-| `npm run build` | 型検査＋本番ビルド（PWA の Service Worker を生成） |
-| `npm run lint` / `npm run typecheck` | ESLint / TypeScript（strict） |
-| `npm test` | 単体テスト（Vitest）。20.2 受け入れ基準の主要シナリオをデータ層で確認 |
-| `npm run test:e2e` | 画面の通し（Playwright。スマホ・PC の2構成） |
-| `npm run check:bundle` | 初回に読み込む JS が gzip 後 200KB 以下か確認（18.1） |
-| `npm run db:verify` | 素の PostgreSQL 16 にマイグレーションを流し、RLS と制限の強制を検証 |
-| `npm run icons` | PWA アイコンと OGP 既定画像を生成 |
+| コマンド                             | 内容                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------ |
+| `npm run dev`                        | 開発サーバー                                                                   |
+| `npm run build`                      | 型検査＋本番ビルド（PWA の Service Worker を生成）                             |
+| `npm run lint` / `npm run typecheck` | ESLint / TypeScript（strict）                                                  |
+| `npm test`                           | 単体テスト（Vitest）。20.2 受け入れ基準の主要シナリオをデータ層で確認          |
+| `npm run test:e2e`                   | 画面の通し（Playwright・モック。スマホ・PC の2構成）                           |
+| `npm run test:e2e:supabase`          | 画面の通し（手元の本物の Supabase：`npx supabase start` が必要）               |
+| `npm run check:bundle`               | 初回に読み込む JS が gzip 後 200KB 以下か確認（18.1）                          |
+| `npm run db:verify`                  | 手元の Supabase の DB を作り直し、1人1アカウント・RLS・制限の強制を SQL で検証 |
+| `npm run db:migrate`                 | `SUPABASE_DB_URL` の DB に未適用のマイグレーションを流す（本番ビルドでは自動） |
+| `npm run icons`                      | PWA アイコンと OGP 既定画像を生成                                              |
 
 ## 構成
 
@@ -50,23 +52,24 @@ src/
   pages/          ユーザー向け画面（U-01〜U-24）
   pages/talk/     トークリスト・トークルーム・グループ・友だち追加・リクエスト
   pages/admin/    運営コンソール（A-01〜A-16）
-  lib/api/        データ層の入口（api）。mock/ がモック実装
+  lib/api/        データ層の入口（api）。supabase/ が本番の実装、mock/ がモック実装（ビルド時に片方だけ含める）
   lib/mock/       モックDB（localStorage）と初期データ
-  lib/supabase/   Supabase クライアント（接続後に使う）
+  lib/supabase/   Supabase クライアント（認証・データ・リアルタイムだけを組み立てた軽量版）
 supabase/
-  migrations/     スキーマ・RLS・RPC・検索（PGroonga）・Realtime・pg_cron
-  functions/      Edge Functions（OGP 取得、R2 署名付き URL、Web Push、一斉配信、AI ニュース など）
-  tests/local/    素の PostgreSQL での検証（シムと検証 SQL）
-  seed.sql        マスタ、設定、公式アカウント
-e2e/              Playwright（受け入れ基準）
+  migrations/     スキーマ・RLS・RPC・検索（PGroonga）・Realtime・pg_cron・Storage・初期データ
+  functions/      Edge Functions（OGP 取得、Web Push、一斉配信、AI ニュース など）
+  templates/      ログインメールのテンプレート（6桁のコード入り）
+  tests/local/    RLS と制限の強制を確かめる検証 SQL
+e2e/              Playwright（受け入れ基準・モック）
+e2e-supabase/     Playwright（手元の Supabase に対する通し）
+scripts/migrate.mjs  マイグレーションの適用（Vercel の本番ビルドで自動実行）
 docs/             接続手順、要件対応表、ADR
 ```
 
 ## 接続の手順
 
-1. [Supabase に接続する](docs/supabase-setup.md)
+1. [Supabase に接続する](docs/supabase-setup.md)（Vercel に Supabase を連携済みなら、デプロイと認証の設定だけ）
 2. [Vercel に接続する](docs/vercel-setup.md)
-3. `VITE_DATA_SOURCE=supabase` に切り替え、モック実装を Supabase 実装に差し替える（[対応表](docs/supabase-setup.md#6-フロントエンドの差し替え)）
 
 要件ごとの実装状況は [docs/requirements-coverage.md](docs/requirements-coverage.md) を見てください。
 

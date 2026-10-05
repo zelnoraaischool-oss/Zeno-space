@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Play, ArrowUp, ArrowDown, Replace, Check, AlertTriangle, Plus, Trash2, Pencil, Download, RefreshCw, Send, X } from 'lucide-react'
-import { api, errorMessage } from '@/lib/api'
+import { api, dataSource, errorMessage } from '@/lib/api'
 import { useLive, useSync } from '@/hooks/useLive'
 import { useMe } from '@/app/session'
 import { Avatar, Badge, Button, ConfirmDialog, IconButton, Segmented, Select, Sheet, Switch, Tabs, TextArea, TextField } from '@/components/ui/primitives'
@@ -10,8 +10,8 @@ import { formatDateTime, formatRelative } from '@/lib/format'
 import type { AdminRole, AppSettings, Banner, NewsItem, NewsSource, UsageMetric } from '@/lib/types'
 import { cn } from '@/lib/cn'
 import { ROLE_LABEL, useAdminRole } from './AdminLayout'
-import { can } from '@/lib/api/mock/core'
-import { USAGE_LIMITS } from '@/lib/api/mock/admin'
+import { can } from '@/lib/api/shared'
+import { USAGE_LIMITS } from '@/lib/api/shared'
 
 function useRun() {
   const toast = useToast()
@@ -92,13 +92,15 @@ export function NewsAdmin() {
             <Button variant="secondary" icon={<Play className="size-4" />} onClick={() => run(() => api.admin.runNews(), '今日のニュースを収集しました')}>
               {dg ? '収集し直す' : '今すぐ収集する'}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => run(() => api.admin.runNews({ failSummaryForDemo: true }), '要約に失敗した場合の表示を確認できます')}
-            >
-              要約失敗を再現（デモ）
-            </Button>
+            {dataSource === 'mock' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => run(() => api.admin.runNews({ failSummaryForDemo: true }), '要約に失敗した場合の表示を確認できます')}
+              >
+                要約失敗を再現（デモ）
+              </Button>
+            )}
             {dg && (dg.status === 'pending' || dg.status === 'approved') && (
               <Button
                 variant="signature"
@@ -920,8 +922,8 @@ export function Audit() {
         <Button
           variant="secondary"
           icon={<Download className="size-4" />}
-          onClick={() => {
-            const blob = new Blob(['﻿' + api.admin.auditCsv()], { type: 'text/csv' })
+          onClick={async () => {
+            const blob = new Blob(['﻿' + (await api.admin.auditCsv())], { type: 'text/csv' })
             const a = document.createElement('a')
             a.href = URL.createObjectURL(blob)
             a.download = `audit-${new Date().toISOString().slice(0, 10)}.csv`
@@ -1054,8 +1056,11 @@ export function SystemSettings() {
         </p>
       </section>
       <section id="usage" className="card space-y-3 p-5">
-        <h2 className="text-title-m">無料枠の逼迫（デモ）</h2>
-        <p className="text-body-m text-fg2">使用量を書き換えて、無料枠メーターの色と「重い機能の一時停止」（画像の送信だけ停止）を確認できます。</p>
+        <h2 className="text-title-m">無料枠の逼迫（確認用）</h2>
+        <p className="text-body-m text-fg2">
+          使用量を書き換えて、無料枠メーターの色と「重い機能の一時停止」（画像の送信だけ停止）を確認できます。
+          {dataSource === 'supabase' && '実際の使用量は毎日0:10に記録し直されます。確認が終わったら30%に戻してください。'}
+        </p>
         <div className="flex flex-wrap items-end gap-2">
           <Select
             value={metric}

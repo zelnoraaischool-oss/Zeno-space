@@ -11,6 +11,10 @@ import { jstDateKey, formatDateTime } from '../../format'
 import { LIMITS, OFFICIAL_USER_ID } from '../../constants'
 import { deliverBroadcast, deliverDigest, normalBroadcastsToday, officialRoomOf, officialSay, segmentUsers } from './official'
 import { runNewsPipeline } from './newsPipeline'
+import { USAGE_LIMITS, toMeters, type Meter, type UserState } from '../shared'
+
+export type { Meter, UserState } from '../shared'
+export { USAGE_LIMITS }
 import { nextMessageId } from '../../mock/db'
 import type {
   AdminRole,
@@ -31,8 +35,6 @@ import type {
   Work,
 } from '../../types'
 
-export type UserState = 'normal' | 'restricted' | 'frozen' | 'banned' | 'leaving'
-
 function userState(p: Profile): UserState {
   if (p.status === 'banned') return 'banned'
   if (p.status === 'frozen') return 'frozen'
@@ -43,29 +45,6 @@ function userState(p: Profile): UserState {
 function maskEmail(e: string): string {
   const [l, d] = e.split('@')
   return `${l.slice(0, 2)}***@${d}`
-}
-
-/** 無料枠の上限（17.3） */
-export const USAGE_LIMITS: Record<UsageMetric, { label: string; limit: number; unit: 'bytes' | 'count'; period: 'total' | 'month' | 'day' }> = {
-  db_bytes: { label: 'DB容量（Supabase）', limit: 500e6, unit: 'bytes', period: 'total' },
-  storage_bytes: { label: 'ストレージ（Supabase）', limit: 1e9, unit: 'bytes', period: 'total' },
-  realtime_peak: { label: '同時接続のピーク', limit: 200, unit: 'count', period: 'total' },
-  realtime_messages: { label: 'リアルタイム配信（月）', limit: 2e6, unit: 'count', period: 'month' },
-  egress_bytes: { label: '転送量（月）', limit: 5e9, unit: 'bytes', period: 'month' },
-  function_invocations: { label: '関数の実行回数（月）', limit: 5e5, unit: 'count', period: 'month' },
-  worker_requests: { label: 'Workers リクエスト（日）', limit: 1e5, unit: 'count', period: 'day' },
-  r2_bytes: { label: 'R2 保存容量', limit: 10e9, unit: 'bytes', period: 'total' },
-}
-
-export interface Meter {
-  metric: UsageMetric
-  label: string
-  value: number
-  limit: number
-  pct: number
-  unit: 'bytes' | 'count'
-  projectedDate: string | null
-  level: 'ok' | 'caution' | 'warning'
 }
 
 export const admin = {
@@ -130,31 +109,7 @@ export const admin = {
   /** ZS-ADM-24 無料枠モニター（70%で注意、90%で警告。直近14日の増え方から到達予測日） */
   async usage(): Promise<Meter[]> {
     requireAdmin('dashboard')
-    const d = db()
-    const out: Meter[] = []
-    for (const [metric, info] of Object.entries(USAGE_LIMITS) as [UsageMetric, (typeof USAGE_LIMITS)[UsageMetric]][]) {
-      const rows = d.usageSnapshots.filter((s) => s.metric === metric).sort((a, b) => (a.date < b.date ? -1 : 1))
-      const last = rows[rows.length - 1]?.value ?? 0
-      const first = rows[0]?.value ?? last
-      const perDay = rows.length > 1 ? (last - first) / (rows.length - 1) : 0
-      const pct = last / info.limit
-      let projectedDate: string | null = null
-      if (perDay > 0 && pct < 1) {
-        const days = Math.ceil((info.limit - last) / perDay)
-        if (days < 365) projectedDate = new Date(Date.now() + days * 86400_000).toISOString()
-      }
-      out.push({
-        metric,
-        label: info.label,
-        value: last,
-        limit: info.limit,
-        pct,
-        unit: info.unit,
-        projectedDate,
-        level: pct >= 0.9 ? 'warning' : pct >= 0.7 ? 'caution' : 'ok',
-      })
-    }
-    return delay(out)
+    return delay(toMeters(db().usageSnapshots))
   },
 
   /** デモ用：使用量を書き換えて逼迫状態を確認する */
@@ -434,8 +389,8 @@ export const admin = {
     requireAdmin('broadcastCreate')
     return delay(db().broadcasts.find((b) => b.id === id) ?? null)
   },
-  estimateAudience(audience: Broadcast['audience'], q: SegmentQuery | null): number {
-    return segmentUsers(q, audience).length
+  async estimateAudience(audience: Broadcast['audience'], q: SegmentQuery | null): Promise<number> {
+    return delay(segmentUsers(q, audience).length, 0)
   },
   async saveBroadcast(input: Partial<Broadcast> & { id?: string }): Promise<Broadcast> {
     const { user } = requireAdmin('broadcastCreate')
@@ -866,13 +821,13 @@ export const admin = {
         .map((l) => ({ log: l, actor: profileOf(l.actorId) })),
     )
   },
-  auditCsv(): string {
+  async auditCsv(): Promise<string> {
     requireAdmin('audit')
     const esc = (v: unknown) => `"${String(typeof v === 'string' ? v : JSON.stringify(v ?? '')).replaceAll('"', '""')}"`
     const rows = db().auditLogs.map((l) =>
       [formatDateTime(l.createdAt), profileOf(l.actorId)?.handle ?? l.actorId, l.action, l.targetType, l.targetId, l.before, l.after].map(esc).join(','),
     )
-    return ['日時(JST),操作者,操作,対象種別,対象ID,変更前,変更後', ...rows].join('\n')
+    return delay(['日時(JST),操作者,操作,対象種別,対象ID,変更前,変更後', ...rows].join('\n'), 0)
   },
 
   // ---------- システム設定（A-16 / ZS-ADM-22） ----------
@@ -890,18 +845,21 @@ export const admin = {
   },
 
   /** 個人データの出力（オーナーのみ） */
-  exportUser(id: string): string {
+  async exportUser(id: string): Promise<string> {
     requireAdmin('export')
     const d = db()
-    return JSON.stringify(
-      {
-        profile: profileOf(id),
-        works: d.works.filter((w) => w.ownerId === id),
-        likes: d.likes.filter((l) => l.userId === id),
-        restrictions: d.restrictions.filter((r) => r.userId === id),
-      },
-      null,
-      2,
+    return delay(
+      JSON.stringify(
+        {
+          profile: profileOf(id),
+          works: d.works.filter((w) => w.ownerId === id),
+          likes: d.likes.filter((l) => l.userId === id),
+          restrictions: d.restrictions.filter((r) => r.userId === id),
+        },
+        null,
+        2,
+      ),
+      0,
     )
   },
 }

@@ -1057,9 +1057,4 @@ export function seed(): DB {
   }
 }
 
-export const DEMO_ACCOUNTS = [
-  { email: 'kura@example.com', label: 'くら（運営オーナー）' },
-  { email: 'mio.design@gmail.com', label: 'みお（LP制作）' },
-  { email: 'taku.dev@gmail.com', label: 'たく（エンジニア）' },
-  { email: 'hana.illust@gmail.com', label: 'はな（イラスト）' },
-]
+export { DEMO_ACCOUNTS } from '../api/shared'

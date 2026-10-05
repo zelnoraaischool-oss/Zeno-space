@@ -10,6 +10,7 @@ interface ImportMetaEnv {
   readonly VITE_SENTRY_DSN?: string
   readonly VITE_MOCK_LATENCY?: string
   readonly VITE_MOCK_BOTS?: string
+  readonly VITE_AUTH_PROVIDERS?: string
 }
 interface ImportMeta {
   readonly env: ImportMetaEnv

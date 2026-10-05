@@ -9,7 +9,6 @@ import { Avatar, Button, Chip, ConfirmDialog, Segmented, Select, Switch, TextAre
 import { useToast } from '@/components/ui/toast'
 import { ImageCropper, type CropRect } from '@/components/ImageCropper'
 import { COMMISSION, INTEREST_TAGS, LIMITS, NOTIFICATION_TYPES, PREFECTURES } from '@/lib/constants'
-import { resetDb } from '@/lib/mock/db'
 import { requestPushPermission } from '@/lib/pwa'
 import type { CommissionStatus, DmPolicy, UserSettings } from '@/lib/types'
 
@@ -81,8 +80,11 @@ export default function Settings() {
             className="flex min-h-11 w-full items-center justify-center gap-2 text-caption text-fg2"
             onClick={() => {
               if (confirm('デモデータを初期状態に戻しますか？（この端末のモックDBが消えます）')) {
-                resetDb()
-                navigate('/')
+                // モックDBはモック動作のときだけ読み込む（Supabase 接続時の JavaScript に含めない）
+                void import('@/lib/mock/db').then(({ resetDb }) => {
+                  resetDb()
+                  navigate('/')
+                })
               }
             }}
           >
@@ -332,33 +334,36 @@ function AccountSettings() {
       </section>
       <section className="card space-y-2 p-4">
         <p className="text-label">ログイン手段の連携（ZS-AUTH-03）</p>
-        {(['google', 'github', 'email'] as const).map((k) => (
-          <div key={k} className="flex min-h-11 items-center justify-between text-body-m">
-            <span>{{ google: 'Google', github: 'GitHub', email: 'メール（ワンタイムコード）' }[k]}</span>
-            {linked.includes(k) ? (
-              <span className="text-caption text-success">連携済み</span>
-            ) : k === 'email' ? (
-              <span className="text-caption text-fg2">未設定</span>
-            ) : (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={async () => {
-                  const email = prompt(`${k === 'google' ? 'Google' : 'GitHub'} のメールアドレス（モック）`)
-                  if (!email) return
-                  try {
-                    await api.auth.linkProvider(k, email)
-                    toast({ text: '連携しました', tone: 'success' })
-                  } catch (e) {
-                    toast({ text: errorMessage(e), tone: 'error' })
-                  }
-                }}
-              >
-                連携する
-              </Button>
-            )}
-          </div>
-        ))}
+        {(['google', 'github', 'email'] as const)
+          .filter((k) => k === 'email' || api.auth.providers().includes(k))
+          .map((k) => (
+            <div key={k} className="flex min-h-11 items-center justify-between text-body-m">
+              <span>{{ google: 'Google', github: 'GitHub', email: 'メール（ワンタイムコード）' }[k]}</span>
+              {linked.includes(k) ? (
+                <span className="text-caption text-success">連携済み</span>
+              ) : k === 'email' ? (
+                <span className="text-caption text-fg2">未設定</span>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={async () => {
+                    // Supabase 接続時は認証画面へ移動して戻る。モックはメールアドレスで連携したことにする
+                    const email = dataSource === 'mock' ? prompt(`${k === 'google' ? 'Google' : 'GitHub'} のメールアドレス（モック）`) : ''
+                    if (dataSource === 'mock' && !email) return
+                    try {
+                      await api.auth.linkProvider(k, email ?? '')
+                      toast({ text: '連携しました', tone: 'success' })
+                    } catch (e) {
+                      toast({ text: errorMessage(e), tone: 'error' })
+                    }
+                  }}
+                >
+                  連携する
+                </Button>
+              )}
+            </div>
+          ))}
         <p className="text-caption text-fg2">1人1アカウントのため、連携済みのメールアドレスで新しいアカウントは作れません。</p>
       </section>
       {inviteOnly && (

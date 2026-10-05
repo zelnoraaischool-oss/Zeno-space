@@ -1,27 +1,31 @@
 /**
  * データ層の入口。画面はここから `api` を使う。
  *
- * VITE_DATA_SOURCE=mock     … 端末内のモックDB（Supabase 接続前の既定）
- * VITE_DATA_SOURCE=supabase … Supabase（./supabase/ の実装に差し替える。docs/supabase-setup.md 参照）
- *
+ * 実装はビルド時に1つ選ぶ（vite.config.ts の `@impl`）：
+ *   Supabase の URL と公開鍵があれば Supabase（./supabase/）、なければ端末内のモックDB（./mock/）。
  * どちらも同じ `Api` 型を満たす。
  */
-import { mockApi, startJobs } from './mock'
+import { api as impl, startBackgroundJobs as startImplJobs, subscribe as subscribeImpl } from '@impl'
+import type { mockApi } from './mock'
 
 export type Api = typeof mockApi
 
 export const dataSource = (import.meta.env.VITE_DATA_SOURCE ?? 'mock') as 'mock' | 'supabase'
 
-export const api: Api = mockApi
+export const api: Api = impl
 
 export function startBackgroundJobs() {
-  if (dataSource === 'mock') startJobs()
+  startImplJobs()
 }
 
-export { subscribe } from '../mock/db'
+/** データの変更（Realtime を含む）を購読する。useLive / useSync が使う */
+export function subscribe(fn: () => void): () => void {
+  return subscribeImpl(fn)
+}
+
 export { ApiError, errorMessage } from './errors'
 export type { SignInResult, PendingIdentity } from './mock/auth'
-export type { RoomSummary, RoomDetail, RoomFilter } from './mock/chat'
+export type { RoomSummary, RoomDetail, RoomFilter, SendInput } from './mock/chat'
 export type { WorkWithOwner, Facets } from './mock/works'
 export type { DigestWithItems } from './mock/misc'
-export type { Meter, UserState } from './mock/admin'
+export type { Meter, UserState } from './shared'

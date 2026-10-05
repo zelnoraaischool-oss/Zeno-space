@@ -4,9 +4,11 @@ import { capabilities, type Capabilities } from '../../restrictions'
 import type { AdminRole, AppNotification, NotificationKind, Profile } from '../../types'
 import { uuid, nowIso } from '../../ids'
 import { OFFICIAL_USER_ID } from '../../constants'
+import { adminSession, setAdminSession, can, type Permission } from '../shared'
+
+export { adminSession, setAdminSession, can, PERMISSIONS, type Permission } from '../shared'
 
 const SESSION_KEY = 'zenospace:session'
-const ADMIN_SESSION_KEY = 'zenospace:admin-session'
 
 const latency = Number(import.meta.env.VITE_MOCK_LATENCY ?? 120)
 
@@ -29,25 +31,8 @@ export function setSession(userId: string | null) {
     if (userId) localStorage.setItem(SESSION_KEY, userId)
     else {
       localStorage.removeItem(SESSION_KEY)
-      sessionStorage.removeItem(ADMIN_SESSION_KEY)
+      setAdminSession(null)
     }
-  } catch {
-    /* noop */
-  }
-}
-
-export function adminSession(): { userId: string; at: number } | null {
-  try {
-    const raw = sessionStorage.getItem(ADMIN_SESSION_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-}
-export function setAdminSession(userId: string | null) {
-  try {
-    if (userId) sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({ userId, at: Date.now() }))
-    else sessionStorage.removeItem(ADMIN_SESSION_KEY)
   } catch {
     /* noop */
   }
@@ -151,31 +136,6 @@ export function audit(actorId: string, action: string, targetType: string, targe
 
 export function adminRoleOf(userId: string): AdminRole | null {
   return db().adminMembers.find((m) => m.userId === userId)?.role ?? null
-}
-
-/** 3.2 運営ロールと権限 */
-export const PERMISSIONS = {
-  dashboard: ['owner', 'admin', 'moderator', 'publisher', 'viewer'],
-  users: ['owner', 'admin', 'moderator', 'viewer'],
-  restrict: ['owner', 'admin', 'moderator'],
-  ban: ['owner', 'admin'],
-  reports: ['owner', 'admin', 'moderator'],
-  hideWork: ['owner', 'admin', 'moderator'],
-  pickup: ['owner', 'admin', 'publisher'],
-  broadcastCreate: ['owner', 'admin', 'publisher'],
-  broadcastApprove: ['owner', 'admin'],
-  news: ['owner', 'admin', 'publisher'],
-  support: ['owner', 'admin', 'moderator', 'publisher'],
-  masters: ['owner', 'admin'],
-  members: ['owner'],
-  system: ['owner'],
-  audit: ['owner', 'admin'],
-  export: ['owner'],
-} satisfies Record<string, AdminRole[]>
-export type Permission = keyof typeof PERMISSIONS
-
-export function can(role: AdminRole | null, perm: Permission): boolean {
-  return !!role && (PERMISSIONS[perm] as AdminRole[]).includes(role)
 }
 
 /** 運営操作の前提：ログイン＋運営ロール＋TOTP 済みセッション（30分で再認証） */

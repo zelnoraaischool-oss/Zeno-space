@@ -1,160 +1,128 @@
 # Supabase に接続する
 
-マイグレーション・RLS・RPC・Edge Functions は用意済みです。ここではプロジェクトを作ってつなぐ手順と、フロントエンドの差し替え方をまとめます。
+アプリは **Supabase の URL と公開鍵が設定されていれば自動で Supabase に接続**し、なければ端末内のモック（デモ）で動きます。
+データの読み書き（`src/lib/api/supabase/`）、マイグレーション（スキーマ・RLS・RPC・Realtime・pg_cron・Storage）、初期データはすべて用意済みです。
 
-## 0. 接続前に確認できること
+## 最短の手順（Vercel に Supabase を連携済みの場合）
 
-```bash
-# 素の PostgreSQL 16 で、マイグレーション（PGroonga と pg_cron を除く）と RLS を検証する
-PGHOST=localhost PGUSER=postgres npm run db:verify
-```
+1. **Vercel の環境変数を確認する**（Project Settings > Environment Variables）。Vercel の Supabase 連携を使うと次が入ります。
 
-`supabase/tests/local/verify.sql` が次を確かめます（要件 20.2 の一部）。
+   | 変数                                                            | 使いみち                                                     |
+   | --------------------------------------------------------------- | ------------------------------------------------------------ |
+   | `NEXT_PUBLIC_SUPABASE_URL`（または `SUPABASE_URL`）             | 接続先。ビルド時にブラウザ用へ読み替える                     |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY`（または `..._PUBLISHABLE_KEY`） | 公開してよい鍵。ブラウザに渡すのはこれだけ                   |
+   | `POSTGRES_URL_NON_POOLING`                                      | ビルド時のマイグレーション適用に使う（ブラウザには渡さない） |
 
-- 1人1アカウント：ドットや `+` だけが違う Gmail で2つ目のアカウントが作れない
-- 参加していないトークのメッセージは読めず、書き込めない
-- チャット送信停止中は RPC でも直接 insert でも送れない。公式アカウントとのトークには送れる
-- TOTP 未済み（aal1）の運営は利用制限を実行できない。監査ログは誰も削除できない
-- 期限が来た制限は自動で解除される
-- 友だちでない相手からの最初のメッセージはリクエストに入る。ブロック後のメッセージは届かない
-- 一斉配信の本文は1件だけ保存され、全員配信で宛先の行が増えない。取り消すと全員の画面から消える
-- Realtime の `room:{id}` は参加者だけが購読できる
+   連携を使わずに設定する場合は、Supabase の Project Settings > API から `VITE_SUPABASE_URL` と `VITE_SUPABASE_ANON_KEY`、
+   Database > Connect の **Session pooler** の接続文字列を `SUPABASE_DB_URL` として登録します。
+   **service_role / secret の鍵は Vercel にもブラウザにも入れません**（17.5）。
 
-## 1. プロジェクトを作る
+2. **本番にデプロイする**（`main` へのマージ、または Vercel の「Redeploy」）。
+   本番ビルドの最初に `scripts/migrate.mjs` が `supabase/migrations/` のうち未適用のものだけを適用します（初回は10件。2回目以降は差分だけ）。
+   適用済みの記録は Supabase CLI と同じ `supabase_migrations.schema_migrations` に残るので、あとから `supabase db push` を使っても二重に適用されません。
 
-1. Supabase で **本番** と **ステージング** の2プロジェクトを作る（無料プランの上限：17.5）。リージョンは **Tokyo（ap-northeast-1）**。
-2. Database > Extensions で `pgroonga`、`pg_cron`、`pg_net` を有効にする（マイグレーションでも `create extension` する）。
-3. ローカルで CLI をつなぐ。
+   > プレビュー（ブランチ）のビルドでは、レビュー前の変更を本番の DB に入れないよう適用しません。
+   > プレビュー用に別の Supabase プロジェクトを使うときは、その環境だけ `MIGRATE=1` を設定すると適用されます。
+
+3. **Supabase の管理画面で認証を設定する**（Authentication）。
+
+   | 設定           | 場所                                | 値                                                                                                                                                                 |
+   | -------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+   | Site URL       | URL Configuration                   | `https://<本番ドメイン>`                                                                                                                                           |
+   | Redirect URLs  | URL Configuration                   | `https://<本番ドメイン>/**` と、プレビュー用に `https://*-<Vercelのチーム名>.vercel.app/**`                                                                        |
+   | ログインメール | Emails > Templates > **Magic Link** | 件名「zenospace のログインコード」、本文に [`supabase/templates/magic_link.html`](../supabase/templates/magic_link.html) を貼る（6桁のコードとボタンの両方が届く） |
+   | MFA            | Multi-Factor > TOTP                 | 有効（運営コンソールは TOTP 必須：3.2。新しいプロジェクトは最初から有効）                                                                                          |
+
+   メールのテンプレートを変えない場合も、メールの「Sign in」リンクを同じ端末・同じブラウザで開けばログインできます。
+
+4. **アプリでメールアドレスを入れてログインする**。最初に登録した人が、`/admin/login` の「オーナーになる」から運営オーナーになり、
+   認証アプリ（Google Authenticator など）で QR コードを読み取って運営コンソールに入ります（オーナーを決められるのは1人目だけ）。
+
+ここまでで、登録・プロフィール・作品の投稿（画像は Supabase Storage）・検索・いいね・問い合わせ・トーク（リアルタイム・既読）・グループ・通知・運営コンソール（利用制限・一斉配信・通報・監査ログ）が動きます。
+
+## 公開前に必ず行うこと
+
+- **メール送信（SMTP）**：Supabase 標準のメール送信は**1時間に数通まで**で、テスト用です。
+  Project Settings > Auth > SMTP に **Resend** などの SMTP を設定し、Authentication > Rate Limits の上限を見直します（17.5）。
+- **無料プランの一時停止**：Supabase の無料プランは7日間アクセスがないと一時停止します。公開後は Pro にするか、定期的にアクセスがある状態にします。
+- **Google ログイン（任意）**：Authentication > Providers > Google に Google Cloud の OAuth クライアントを登録し、
+  Vercel に `VITE_AUTH_PROVIDERS=google`（GitHub も使うなら `google,github`）を設定します。設定するまでボタンは表示しません。
+
+## 任意：Edge Functions と定期処理
+
+次の機能は Edge Function を配置すると動きます（配置しなくてもアプリは動きます）。
+
+| 関数                                                  | 内容                                                 | 配置しない場合                                   |
+| ----------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------ |
+| `og-fetch`                                            | 作品の URL から OGP を取得                           | URL のドメイン名をタイトル候補にする             |
+| `push-dispatch` / `broadcast-dispatch`                | Web Push の送信                                      | 通知はアプリ内（通知一覧・バッジ）だけ           |
+| `ai-news`                                             | 毎朝の AI ニュースの収集・要約・配信                 | 運営コンソールの「今すぐ収集する」がエラーになる |
+| `retention` / `usage-monitor` / `saved-search-notify` | 保持期間の削除・無料枠の通知・保存した検索の新着通知 | DB 側の定期処理（pg_cron）だけ動く               |
 
 ```bash
 npx supabase login
 npx supabase link --project-ref <project-ref>
-npx supabase db push          # supabase/migrations を適用
-psql "$SUPABASE_DB_URL" -f supabase/seed.sql   # マスタ・設定・公式アカウント（初回のみ）
-npx supabase gen types typescript --linked > src/lib/supabase/database.types.ts
+npx supabase functions deploy og-fetch push-dispatch broadcast-dispatch ai-news retention usage-monitor saved-search-notify
+npx supabase secrets set APP_ORIGIN=https://<本番ドメイン> VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:ops@<ドメイン>
 ```
 
-> 公式アカウント（`00000000-0000-4000-8000-000000000001`）は `seed.sql` で `auth.users` と `profiles` に作ります。
-
-## 2. 認証（5.1）
-
-| 設定 | 場所 | 値 |
-| --- | --- | --- |
-| Google | Authentication > Providers | Google Cloud の OAuth クライアント。リダイレクト URL に `https://<project>.supabase.co/auth/v1/callback` |
-| GitHub | 同上 | GitHub OAuth App |
-| メール OTP | Authentication > Email | 「Email OTP」を有効、桁数6、Magic Link は使わない |
-| SMTP | Project Settings > Auth > SMTP | **Resend** の SMTP（標準のメール送信は1時間2通まで：17.5）。新規登録メールの上限（初期値 1時間30人）を公開前に見直す |
-| MFA | Authentication > MFA | TOTP を有効（運営コンソールは TOTP 必須：3.2） |
-| CAPTCHA | Authentication > Attack Protection | Cloudflare Turnstile（18.3） |
-| Site URL | Authentication > URL Configuration | `https://<本番ドメイン>`、追加のリダイレクトに `https://*.vercel.app/**`（プレビュー用） |
-| アカウントの自動連携 | Authentication > Providers | 同じ確認済みメールは同じユーザーに連携（ZS-AUTH-03） |
-
-1人1アカウントの判定は `auth.users` への insert で動くトリガー `private.handle_new_user()` が行います。重複時は `duplicate_account` で登録を止めるので、クライアントは連携の案内（ログイン画面の「既存のアカウントに連携」）を出します。
-
-## 3. 秘密情報
-
-### Vault（pg_cron から Edge Function を呼ぶため）
+pg_cron から Edge Function を呼ぶため、SQL Editor で Vault に URL と鍵を登録します（pg_cron の定期処理のうち、期限切れの制限の解除・集計の補正・保持期間の削除は Vault なしで動きます）。
 
 ```sql
 select vault.create_secret('https://<project>.supabase.co', 'project_url');
 select vault.create_secret('<service_role_key>', 'service_role_key');
 ```
 
-### Edge Function の Secrets
+Web Push の VAPID 鍵は `npx web-push generate-vapid-keys` で作り、公開鍵を Vercel の `VITE_VAPID_PUBLIC_KEY` にも設定します。
+
+## 画像の保存先
+
+R2 へ移すまでは Supabase Storage の公開バケット `media` に保存します（マイグレーションで作成。1枚10MBまで、WebP / JPEG / PNG / GIF）。
+保存先のパスの先頭は本人のユーザーIDで、他人のフォルダには書き込めません（RLS）。端末側で縮小・WebP 変換し、位置情報（EXIF）を消してから送ります。
+無料プランの Storage は 1GB までです。運営コンソールの無料枠モニターに使用量が出ます。
+
+## 手元で Supabase につないで確かめる
+
+Docker があれば、本物の Supabase（認証・Storage・Realtime・メール受信箱つき）を手元で動かせます。
 
 ```bash
-npx supabase secrets set \
-  APP_ORIGIN=https://<本番ドメイン> \
-  VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_SUBJECT=mailto:ops@<ドメイン> \
-  R2_ACCOUNT_ID=... R2_ACCESS_KEY_ID=... R2_SECRET_ACCESS_KEY=... R2_BUCKET=zenospace-media R2_PUBLIC_BASE_URL=https://img.<ドメイン> \
-  CF_ACCOUNT_ID=... CF_AI_TOKEN=... \
-  GEMINI_API_KEY=... \
-  SLACK_WEBHOOK_URL=...
+npx supabase start                 # 初回はイメージの取得に数分。マイグレーションも適用される
+npm run test:e2e:supabase          # 画面の通し（メールOTP・投稿・検索・いいね・問い合わせ・リアルタイム・グループ・一斉配信・運営）
+npm run db:verify                  # DB を作り直し、1人1アカウント・RLS・制限の強制を SQL で検証
 ```
 
-VAPID 鍵は `npx web-push generate-vapid-keys` で作ります。公開鍵はフロントエンドの `VITE_VAPID_PUBLIC_KEY` にも設定します。
-**service_role の鍵はフロントエンドや Vercel の `VITE_` 変数に入れない**こと（17.5）。
+開発サーバーを手元の Supabase につなぐときは `.env.local` に次を書きます（`npx supabase status` で表示される値）。
+ログインメールは http://127.0.0.1:54324 （Mailpit）で読めます。
 
-## 4. Edge Functions
-
-```bash
-npx supabase functions deploy og-fetch upload-url push-dispatch broadcast-dispatch ai-news retention usage-monitor saved-search-notify
+```
+VITE_SUPABASE_URL=http://127.0.0.1:54321
+VITE_SUPABASE_ANON_KEY=<Publishable key>
 ```
 
-| 関数 | 呼び出し元 | 内容 |
-| --- | --- | --- |
-| `og-fetch` | アプリ（ログイン済み） | URL の OGP 取得。内部アドレス禁止・リダイレクト3回・5秒（SSRF 対策） |
-| `upload-url` | アプリ（ログイン済み） | R2 の署名付きアップロード URL（5分）。種類と容量を確認、SVG 不可 |
-| `push-dispatch` | Database Webhook（`notifications` の INSERT）／pg_cron | Web Push 送信。410 の購読は削除 |
-| `broadcast-dispatch` | pg_cron（1分ごと） | 一斉配信の Push を 500人ずつ送る |
-| `ai-news` | pg_cron（7:00 JST に collect、毎分 deliver） | RSS 収集→重複除去→選定→要約→承認待ち→配信 |
-| `retention` | pg_cron（3:30 JST） | 保持期間を過ぎた R2 のファイルを削除 |
-| `usage-monitor` | pg_cron（0:10 JST） | 無料枠の 70% / 90% を Slack に通知、90% で重い機能を停止 |
-| `saved-search-notify` | pg_cron（8:00 JST） | 保存した検索条件の新着通知 |
+`supabase/tests/local/verify.sql` が確かめること（要件 20.2 の一部）：
 
-**Database Webhook**：Database > Webhooks で `public.notifications` の INSERT を `push-dispatch` に送る（Authorization に service_role）。
+- 1人1アカウント：ドットや `+` だけが違う Gmail で2つ目のアカウントが作れない
+- 参加していないトークのメッセージは読めず、書き込めない
+- チャット送信停止中は RPC でも直接 insert でも送れない。公式アカウントとのトークには送れる。制限の社内メモは本人に見えない
+- TOTP 未済み（aal1）の運営は利用制限を実行できない。監査ログは誰も削除できない
+- 期限が来た制限は自動で解除される
+- 友だちでない相手からの最初のメッセージはリクエストに入る。ブロック後のメッセージは届かない
+- 一斉配信の本文は1件だけ保存され、全員配信で宛先の行が増えない。取り消すと全員の画面から消える
 
-## 5. Cloudflare R2
+## データ層の対応（参考）
 
-1. バケット `zenospace-media`（画像・ファイル）と `zenospace-backup`（DB バックアップ）を作る。
-2. メディア用バケットに独自ドメインを割り当てる（`r2.dev` は本番で使わない：17.5 / Q-03）。
-3. CORS：`PUT` を `https://<本番ドメイン>` と `https://*.vercel.app` から許可。`Content-Type` ヘッダーを許可。
-4. API トークン（Object Read & Write）を作り、Edge Function の Secrets と GitHub Actions の Secrets に設定。
+画面は `src/lib/api` の `api` だけを使います。Supabase 実装（`src/lib/api/supabase/`）はモック実装と同じ型を満たします（型検査で確認）。
 
-## 6. フロントエンドの差し替え
-
-画面はすべて `src/lib/api` の `api` を通してデータを読み書きしています。`Api` 型（`typeof mockApi`）を満たす Supabase 実装を `src/lib/api/supabase/` に作り、`src/lib/api/index.ts` で `VITE_DATA_SOURCE` によって切り替えます。
-
-```ts
-// src/lib/api/index.ts（接続後）
-export const api: Api = dataSource === 'supabase' ? supabaseApi : mockApi
-```
-
-| api のメソッド | Supabase での実装 |
-| --- | --- |
-| `auth.signInWithProvider` | `supabase.auth.signInWithOAuth({ provider })`（PKCE）。戻り後に `record_device(端末ハッシュ)` |
-| `auth.sendEmailOtp` / `verifyEmailOtp` | `auth.signInWithOtp({ email })` / `auth.verifyOtp({ email, token, type: 'email' })` |
-| `auth.completeSignUp` | RPC `complete_signup(birth_ym, terms_version, privacy_version)` |
-| `auth.linkAndSignIn` / `linkProvider` | `auth.linkIdentity({ provider })` |
-| `auth.changeHandle` / `requestDeletion` | RPC `change_handle` / `request_account_deletion` |
-| `auth.verifyAdminTotp` | `auth.mfa.challenge` → `auth.mfa.verify`（aal2 になる） |
-| `users.*` | `profiles`、`friendships`、`blocks`、`user_settings`、`my_restrictions` ビュー、`appeals` |
-| `chat.listRooms` | `room_members`＋`rooms`（未読は `messages.created_at > last_read_at` の件数） |
-| `chat.listMessages` | `messages`（`id desc` で30件ずつ）＋公式トークは RPC `official_feed` |
-| `chat.send` | RPC `send_message(room, body, client_id, kind, reply_to, meta)` |
-| `chat.markRead` | RPC `mark_read`（2秒ごとにまとめる） |
-| `chat.openDirect` / `openInquiry` / `createGroup` | RPC `open_direct` / `open_inquiry` / `create_group` |
-| `chat.unsend` / `react` / `hideForMe` | RPC `unsend_message` / `reactions` / `message_hides` |
-| リアルタイム | `subscribeRoom(roomId)`（`src/lib/supabase/client.ts`）。裏に回ったら切断 |
-| `works.list` / `count` / `facets` | RPC `search_works(query, offset, limit)`（PGroonga）。Worker/Edge で60秒キャッシュ |
-| `works.get` / `update` / `publish` | `works`＋`work_media`＋`work_techs`＋`work_tags`（公開の必須チェックはトリガー） |
-| `works.setLike` / `recordView` | `likes`（件数はトリガー）/ RPC `record_view` |
-| `works.fetchOgp` | Edge Function `og-fetch` |
-| `storage.uploadImage` | 端末で WebP 化（`processImage`）→ `upload-url` → R2 へ PUT |
-| `notifications.*` | `notifications`、`push_subscriptions` |
-| `news.*` | `news_digests`＋`news_items`＋`news_reactions` |
-| `reports.create` | `reports`（自動非表示はトリガー） |
-| `admin.restrict` / `liftRestriction` | RPC `admin_restrict` / `admin_lift_restriction` |
-| `admin.approveAndSend` / `cancelBroadcast` / `broadcastReport` | RPC `admin_send_broadcast` / `admin_cancel_broadcast` / `admin_broadcast_report` |
-| `admin.approveNews` | RPC `admin_approve_news` |
-| `admin.updateReport` / `setWorkHidden` / `decideAppeal` / `supportReply` | RPC `admin_update_report` / `admin_set_work_hidden` / `admin_decide_appeal` / `admin_support_reply` |
-| `admin.banners` / マスタ / 設定 / メンバー | 各テーブルへ直接（RLS で運営ロールを確認し、トリガーが監査ログへ記録） |
-| `admin.usage` | `usage_snapshots` |
-
-モック専用のもの（`src/lib/mock/`、`src/lib/api/mock/simulate.ts`、`jobs.ts`）は差し替え後に削除します。
-
-## 7. 接続後の確認
-
-```bash
-npx supabase db reset            # ローカル（Docker）でマイグレーション＋seed
-npx supabase test db             # pgTAP（supabase/tests/*.test.sql を追加して実行）
-VITE_DATA_SOURCE=supabase npm run test:e2e
-```
-
-- [ ] Google / GitHub / メール OTP でログインできる
-- [ ] ドットや `+` 違いの Gmail で2つ目のアカウントが作れない
-- [ ] 運営コンソールに TOTP で入れる
-- [ ] 2つの端末でトークの送受信・既読がリアルタイムに反映される
-- [ ] Web Push が届く（iPhone はホーム画面に追加した PWA で）
-- [ ] 毎朝 7:30 に AI ニュースの下書きが届き、承認で配信される
-- [ ] 無料枠モニターに DB 容量が出る
+| api                                                  | Supabase での実装                                                                                                               |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `auth.sendEmailOtp` / `verifyEmailOtp`               | `auth.signInWithOtp` / `auth.verifyOtp`。登録の途中（規約同意前）は RPC `complete_signup` で完了                                |
+| `auth.verifyAdminTotp` / `adminSetup` / `claimOwner` | MFA（TOTP）の登録・確認で aal2 に。最初のオーナーは RPC `claim_owner`                                                           |
+| `users.*`                                            | `profiles`（生年月を除く列）・`friendships`・`blocks`・`user_settings`・RPC `my_state` / `profile_stats` / `friend_suggestions` |
+| `chat.listRooms` / 未読数                            | RPC `my_rooms`（未読・相手・公式配信をまとめて返す）                                                                            |
+| `chat.listMessages` / `send` / `markRead`            | `messages`（RLS）＋公式トークは RPC `official_feed` / RPC `send_message` / RPC `mark_read`                                      |
+| グループ・招待・リクエスト                           | RPC `create_group` / `room_*` / `request_respond`                                                                               |
+| リアルタイム                                         | 本人のチャンネル `user:{id}`（新着・通知・制限）と、開いているトークの `room:{id}`（新着・既読・リアクション）                  |
+| `works.list` / `count` / `facets`                    | RPC `search_works` / `search_facets`（PGroonga）                                                                                |
+| `works.update` / `publish` / `trash`                 | RPC `save_work`（タグ・使用技術・画像）/ `works.visibility`（公開の必須チェックはトリガー）/ RPC `work_set_trashed`             |
+| `storage.uploadImage`                                | 端末で WebP 化 → Storage の `media` バケット                                                                                    |
+| `admin.*`                                            | 運営用 RPC（`admin_*`）と RLS（aal2 のみ）。操作は監査ログに残る                                                                |

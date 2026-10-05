@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   Plus,
@@ -24,7 +24,7 @@ import { COMMISSION, INTEREST_TAGS, LIMITS } from '@/lib/constants'
 import type { Broadcast, BroadcastStatus, Bubble, CommissionStatus, RichCard, SegmentQuery } from '@/lib/types'
 import { cn } from '@/lib/cn'
 import { useAdminRole } from './AdminLayout'
-import { can } from '@/lib/api/mock/core'
+import { can } from '@/lib/api/shared'
 import { useSync } from '@/hooks/useLive'
 
 const STATUS: Record<BroadcastStatus, { label: string; tone: 'muted' | 'warning' | 'aurora' | 'success' | 'danger' }> = {
@@ -113,7 +113,10 @@ export function BroadcastCompose() {
       setWhen(existing.scheduledAt ? 'later' : 'now')
     }
   }, [existing])
-  const count = useMemo(() => api.admin.estimateAudience(b.audience ?? 'all', b.segmentQuery ?? null), [b.audience, b.segmentQuery])
+  const { data: count = 0 } = useLive(
+    () => api.admin.estimateAudience(b.audience ?? 'all', b.segmentQuery ?? null),
+    [b.audience, JSON.stringify(b.segmentQuery)],
+  )
   const bubbles = b.bubbles ?? []
   const setBubbles = (bs: Bubble[]) => setB({ ...b, bubbles: bs })
   const setSeg = (patch: Partial<SegmentQuery>) => setB({ ...b, segmentQuery: { ...(b.segmentQuery ?? {}), ...patch } })

@@ -12,7 +12,7 @@ import { WORK_TYPE_LABEL } from '@/lib/constants'
 import type { ReportStatus } from '@/lib/types'
 import { cn } from '@/lib/cn'
 import { useAdminRole } from './AdminLayout'
-import { can } from '@/lib/api/mock/core'
+import { can } from '@/lib/api/shared'
 
 const STATUS_LABEL: Record<ReportStatus, string> = { open: '未対応', in_progress: '対応中', resolved: '対応済み', rejected: '却下' }
 

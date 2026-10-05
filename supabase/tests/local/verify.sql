@@ -34,7 +34,7 @@ do $$ begin
 end $$;
 do $$ begin
   begin
-    insert into auth.users (email, raw_app_meta_data) values ('alicesmith@googlemail.com', '{"provider":"github"}');
+    insert into auth.users (id, email, raw_app_meta_data) values (gen_random_uuid(), 'alicesmith@googlemail.com', '{"provider":"github"}');
     raise exception 'ドットや + だけが違う Gmail で2つ目のアカウントが作れてしまった';
   exception when raise_exception then
     if sqlerrm <> 'duplicate_account' then raise; end if;
@@ -121,9 +121,11 @@ do $$ begin
 end $$;
 -- 公式アカウントとのトークには送れる
 select public.send_message(private.official_room('11111111-1111-4111-8111-111111111111'), '異議があります', gen_random_uuid());
--- 本人は自分の制限を見られるが、社内メモは見えない（my_restrictions ビュー）
+-- 本人は自分の制限を見られるが、社内メモは見えない（my_restrictions()。テーブルは運営だけが読める）
 do $$ begin
-  assert (select count(*) from public.my_restrictions) = 1, '本人が制限を確認できない';
+  assert jsonb_array_length(public.my_restrictions()) = 1, '本人が制限を確認できない';
+  assert public.my_restrictions()::text not like '%internal_note%', '社内メモが本人に見えている';
+  assert (select count(*) from public.restrictions) = 0, '制限のテーブル（社内メモを含む）が本人から読めてしまう';
 end $$;
 select pg_temp.logout();
 

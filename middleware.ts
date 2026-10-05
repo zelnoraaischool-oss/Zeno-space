@@ -13,8 +13,15 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 
 export default async function middleware(request: Request) {
   const url = new URL(request.url)
-  const supabaseUrl = process.env.VITE_SUPABASE_URL
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
+  // Vercel の Supabase 連携が入れる変数名（NEXT_PUBLIC_SUPABASE_* / SUPABASE_*）でも動く。公開してよい鍵だけを使う
+  const env = process.env
+  const supabaseUrl = env.VITE_SUPABASE_URL || env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL
+  const anonKey =
+    env.VITE_SUPABASE_ANON_KEY ||
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    env.SUPABASE_ANON_KEY ||
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    env.SUPABASE_PUBLISHABLE_KEY
   if (!BOT.test(request.headers.get('user-agent') ?? '') || !supabaseUrl || !anonKey) return next()
 
   const headers = { apikey: anonKey, Authorization: `Bearer ${anonKey}` }
@@ -24,13 +31,17 @@ export default async function middleware(request: Request) {
   try {
     const [, kind, key] = url.pathname.split('/')
     if (kind === 'works') {
-      const res = await fetch(`${supabaseUrl}/rest/v1/works?id=eq.${encodeURIComponent(key)}&select=title,catch_copy,work_media(storage_key,sort_order)`, { headers })
+      const res = await fetch(`${supabaseUrl}/rest/v1/works?id=eq.${encodeURIComponent(key)}&select=title,catch_copy,work_media(storage_key,sort_order)`, {
+        headers,
+      })
       const [w] = (await res.json()) as { title: string; catch_copy: string; work_media: { storage_key: string; sort_order: number }[] }[]
       if (w) {
         title = `${w.title} | zenospace`
         description = w.catch_copy || description
         const cover = [...w.work_media].sort((a, b) => a.sort_order - b.sort_order)[0]
-        if (cover && process.env.VITE_R2_PUBLIC_BASE_URL) image = `${process.env.VITE_R2_PUBLIC_BASE_URL}/${cover.storage_key}_1200.webp`
+        // 画像は公開URLをそのまま保存している（Supabase Storage）。R2 へ移したあとのキーだけの形式にも対応する
+        if (cover?.storage_key.startsWith('https://')) image = cover.storage_key
+        else if (cover && env.VITE_R2_PUBLIC_BASE_URL) image = `${env.VITE_R2_PUBLIC_BASE_URL}/${cover.storage_key}_1200.webp`
       }
     } else if (kind === 'u') {
       const res = await fetch(`${supabaseUrl}/rest/v1/profiles?handle=eq.${encodeURIComponent(key)}&select=display_name,bio`, { headers })

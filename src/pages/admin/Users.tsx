@@ -12,7 +12,7 @@ import { formatDateTime, formatFullDate, formatRelative } from '@/lib/format'
 import type { RestrictionKind } from '@/lib/types'
 import { cn } from '@/lib/cn'
 import { useAdminRole, ROLE_LABEL } from './AdminLayout'
-import { can } from '@/lib/api/mock/core'
+import { can } from '@/lib/api/shared'
 
 const STATE_LABEL: Record<UserState, { label: string; tone: 'muted' | 'warning' | 'danger' | 'aurora' }> = {
   normal: { label: '通常', tone: 'muted' },
@@ -211,8 +211,8 @@ export function UserDetail() {
               size="sm"
               variant="ghost"
               icon={<Download className="size-4" />}
-              onClick={() => {
-                const blob = new Blob([api.admin.exportUser(p.id)], { type: 'application/json' })
+              onClick={async () => {
+                const blob = new Blob([await api.admin.exportUser(p.id)], { type: 'application/json' })
                 const a = document.createElement('a')
                 a.href = URL.createObjectURL(blob)
                 a.download = `user-${p.handle}.json`
